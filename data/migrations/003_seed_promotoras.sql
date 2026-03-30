@@ -61,18 +61,17 @@ INSERT INTO promotoras (nombre, web, descripcion, activa, scraping_activo, scrap
  'https://www.emvs.es/Paginas/inicio.aspx',
  'html');
 
--- Jobs de scraping iniciales (uno por promotora para las páginas de promociones)
+-- Jobs de scraping iniciales (uno por promotora)
+-- Ibosa: solo el listado general (incluye Berrocales y Valdecarros)
+-- EMVS: sin job (no hay scraper activo para EMVS)
 INSERT INTO scraping_jobs (promotora_id, url, descripcion, activo) VALUES
 (1, 'https://www.grupoibosa.com/nuestras-promociones/', 'Listado de promociones activas de Ibosa', true),
-(1, 'https://www.grupoibosa.com/nuestras-promociones/promociones-encurso/los-berrocales/', 'Ibosa — Berrocales', true),
-(1, 'https://www.grupoibosa.com/nuestras-promociones/promociones-encurso/valdecarros/', 'Ibosa — Valdecarros', true),
 (2, 'https://www.serprocolinmobiliaria.com/', 'Serprocol — Página principal', true),
 (3, 'https://aurora-homes.es/promociones/', 'Aurora Homes — Promociones', true),
 (4, 'https://www.prygesa.es/obra-nueva/madrid/vicalvaro/los-ahijones', 'Prygesa — Ahijones', true),
 (5, 'https://www.impulsaproyectos.com/proyectos/', 'Grupo Impulsa — Proyectos', true),
 (6, 'https://www.asentis.com', 'Asentis — Web principal', true),
-(7, 'https://hercesa.com/promocion/berrocales/', 'Hercesa — Berrocales', true),
-(8, 'https://www.emvs.es/ViviendasSuelo/Paginas/ViviendasProtegidas.aspx', 'EMVS — Viviendas protegidas', true);
+(7, 'https://hercesa.com/promocion/berrocales/', 'Hercesa — Berrocales', true);
 
 -- Seed: Admin por defecto (password: Admin1234! — CAMBIAR INMEDIATAMENTE)
 -- bcrypt hash de 'Admin1234!' con rounds=12

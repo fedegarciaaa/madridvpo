@@ -752,7 +752,7 @@
         api.setToken(data.accessToken); api.setUser(data.usuario);
         closeModal();
         try { showToast('¡Bienvenido/a de vuelta!', 'success'); updateNav(); } catch {}
-        window.location.href = '/app.html';
+        window.location.href = data.usuario?.rol === 'admin' ? '/admin.html' : '/app.html';
       } catch (err) {
         errEl.textContent = err.message || 'Error al iniciar sesión'; errEl.style.display = '';
         btn.textContent = 'Entrar'; btn.disabled = false;
@@ -775,7 +775,7 @@
         api.setToken(data.accessToken); api.setUser(data.usuario);
         closeModal();
         try { showToast('¡Cuenta creada! Bienvenido/a a MadridVPO.', 'success'); updateNav(); } catch {}
-        window.location.href = '/app.html';
+        window.location.href = data.usuario?.rol === 'admin' ? '/admin.html' : '/app.html';
       } catch (err) {
         errEl.textContent = err.message || 'Error al crear la cuenta'; errEl.style.display = '';
         btn.textContent = 'Crear cuenta gratis'; btn.disabled = false;
