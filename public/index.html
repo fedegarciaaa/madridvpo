@@ -8,6 +8,11 @@
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#4c6ef5" />
 
+  <!-- Fonts: Syne (headings) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -17,6 +22,10 @@
         extend: {
           colors: {
             brand: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          },
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            body: ['DM Sans', 'sans-serif'],
           }
         }
       }
@@ -27,329 +36,662 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
   <style>
-    :root { color-scheme: dark; }
-    body { background: #030712; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; }
-    .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); }
-    .brand-gradient { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
-    .card-hover { transition: transform .2s, box-shadow .2s; }
-    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,.25); }
-    .actividad-item { border-left: 2px solid #334155; }
-    .actividad-item:hover { border-left-color: #6366f1; background: rgba(99,102,241,.05); }
-    .actividad-dot { width: 10px; height: 10px; border-radius: 50%; margin-left: -6px; flex-shrink: 0; }
-    .badge-premium { background: linear-gradient(90deg, #f59e0b, #d97706); }
-    @keyframes radarPulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
-    .radar-live { animation: radarPulse 2s infinite; }
-    .zona-card { background: linear-gradient(135deg, #1e293b, #0f172a); }
+    /* ── Base ─────────────────────────────────────────────── */
+    :root {
+      color-scheme: dark;
+      --bg:        #060c18;
+      --bg-card:   #0d1526;
+      --bg-raised: #111d35;
+      --border:    rgba(99,102,241,0.15);
+      --border-subtle: rgba(255,255,255,0.06);
+      --text:      #e2e8f0;
+      --text-muted:#94a3b8;
+      --text-dim:  #475569;
+      --accent:    #6366f1;
+      --accent-glow: rgba(99,102,241,0.3);
+    }
+
     html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Grid background pattern ───────────────────────────── */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* ── Typography ────────────────────────────────────────── */
+    .font-display { font-family: 'Syne', sans-serif; }
+
+    /* ── Brand gradient ────────────────────────────────────── */
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%); }
+    .text-gradient {
+      background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 40%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Glow effects ──────────────────────────────────────── */
+    .glow-indigo { box-shadow: 0 0 40px rgba(99,102,241,0.2), 0 0 80px rgba(99,102,241,0.08); }
+    .btn-glow:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.5); }
+
+    /* ── Navbar ────────────────────────────────────────────── */
+    .nav-glass {
+      background: rgba(6, 12, 24, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* ── Hero ──────────────────────────────────────────────── */
+    .hero-bg {
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,0.18) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 40% at 80% 50%, rgba(109,40,217,0.08) 0%, transparent 60%),
+                  var(--bg);
+    }
+
+    /* ── Live pulse ────────────────────────────────────────── */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+    @keyframes ping-ring {
+      0%    { transform: scale(1); opacity: 0.6; }
+      100%  { transform: scale(2.4); opacity: 0; }
+    }
+    .ping-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: ping-ring 2s ease-out infinite;
+    }
+
+    /* ── Stat counter ──────────────────────────────────────── */
+    .stat-number {
+      font-family: 'Syne', sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Cards ─────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      border-color: var(--border);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(99,102,241,0.12);
+    }
+
+    /* ── Activity items ────────────────────────────────────── */
+    .actividad-item {
+      border-left: 2px solid var(--border-subtle);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .actividad-item:hover {
+      border-left-color: var(--accent);
+      background: rgba(99,102,241,0.05);
+    }
+    .actividad-dot { width: 8px; height: 8px; border-radius: 50%; margin-left: -5px; flex-shrink: 0; }
+
+    /* ── Steps ─────────────────────────────────────────────── */
+    .step-line {
+      position: absolute;
+      top: 28px;
+      left: calc(50% + 28px);
+      right: calc(-50% + 28px);
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ── Pricing ───────────────────────────────────────────── */
+    .card-premium {
+      background: linear-gradient(145deg, #0f1c3f 0%, #0d1526 100%);
+      border: 1px solid rgba(99,102,241,0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .card-premium::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent);
+    }
+
+    .badge-premium {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Badge live ────────────────────────────────────────── */
+    .badge-live {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.25);
+    }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .footer-bg {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ── Modal ─────────────────────────────────────────────── */
+    .modal-bg { background: rgba(3, 7, 18, 0.8); backdrop-filter: blur(8px); }
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+    }
+    .input-field {
+      background: var(--bg-raised);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: border-color 0.15s;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    /* ── Scroll reveal ─────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ── Section dividers ──────────────────────────────────── */
+    .section-alt { background: var(--bg-card); }
+
+    /* ── Monospace data accent ─────────────────────────────── */
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
   </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-  <!-- ── NAVBAR ─────────────────────────────────────────── -->
-  <nav class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2 font-bold text-lg">
-        <div class="w-8 h-8 brand-gradient rounded-lg flex items-center justify-center">
+  <!-- ── NAVBAR ─────────────────────────────────────────────────────────────── -->
+  <nav class="nav-glass sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+
+      <a href="/" class="flex items-center gap-2.5 shrink-0">
+        <div class="w-8 h-8 brand-gradient rounded-lg flex items-center justify-center shadow-lg shadow-indigo-900/40">
           <i data-lucide="home" class="w-4 h-4 text-white"></i>
         </div>
-        <span class="text-white">Madrid<span class="text-indigo-400">VPO</span></span>
+        <span class="font-display font-700 text-white text-lg tracking-tight">Madrid<span class="text-indigo-400">VPO</span></span>
       </a>
-      <div class="hidden md:flex items-center gap-6 text-sm text-slate-400">
-        <a href="#zonas" class="hover:text-white transition-colors">Zonas</a>
-        <a href="#como-funciona" class="hover:text-white transition-colors">Cómo funciona</a>
-        <a href="#planes" class="hover:text-white transition-colors">Planes</a>
-        <a href="/app.html" class="hover:text-white transition-colors">Mapa</a>
+
+      <div class="hidden md:flex items-center gap-7 text-sm text-slate-400">
+        <a href="#zonas"         class="hover:text-white transition-colors duration-150">Zonas</a>
+        <a href="#como-funciona" class="hover:text-white transition-colors duration-150">Cómo funciona</a>
+        <a href="#planes"        class="hover:text-white transition-colors duration-150">Planes</a>
+        <a href="/app.html"      class="hover:text-white transition-colors duration-150 flex items-center gap-1">
+          <i data-lucide="map" class="w-3.5 h-3.5"></i>Mapa
+        </a>
       </div>
+
       <div class="flex items-center gap-2" id="nav-auth">
-        <button onclick="openModal('login')" class="text-sm text-slate-400 hover:text-white px-3 py-1.5 transition-colors">Entrar</button>
-        <button onclick="openModal('register')" class="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg transition-colors">Registrarse gratis</button>
+        <button onclick="openModal('login')"
+          class="text-sm text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all duration-150">
+          Entrar
+        </button>
+        <button onclick="openModal('register')"
+          class="text-sm brand-gradient text-white px-4 py-1.5 rounded-lg btn-glow transition-all duration-200 font-medium">
+          Registrarse gratis
+        </button>
       </div>
-      <button onclick="toggleTheme()" class="ml-2 p-1.5 text-slate-400 hover:text-white transition-colors" title="Cambiar tema">
+
+      <button onclick="toggleTheme()" class="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/5 transition-all" title="Cambiar tema">
         <i data-lucide="moon" class="w-4 h-4" id="theme-icon"></i>
       </button>
     </div>
   </nav>
 
-  <!-- ── HERO ───────────────────────────────────────────── -->
-  <section class="hero-gradient py-24 px-4 text-center relative overflow-hidden">
-    <div class="absolute inset-0 opacity-5">
-      <div class="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
-      <div class="absolute bottom-20 right-1/4 w-64 h-64 bg-violet-500 rounded-full blur-3xl"></div>
+
+  <!-- ── HERO ───────────────────────────────────────────────────────────────── -->
+  <section class="hero-bg grid-bg relative overflow-hidden pt-28 pb-24 px-5">
+
+    <!-- Decorative blurs -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      <div class="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+      <div class="absolute bottom-0 right-0 w-[300px] h-[300px] bg-violet-700/8 rounded-full blur-[100px]"></div>
     </div>
-    <div class="relative max-w-4xl mx-auto">
-      <div class="inline-flex items-center gap-2 bg-indigo-900/50 border border-indigo-700/50 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-6">
-        <span class="radar-live w-2 h-2 bg-green-400 rounded-full"></span>
+
+    <div class="relative max-w-4xl mx-auto text-center">
+
+      <!-- Live badge -->
+      <div class="inline-flex items-center gap-2.5 badge-live rounded-full px-4 py-2 text-xs text-emerald-400 font-medium mb-8 tracking-wide">
+        <span class="relative inline-flex w-2 h-2">
+          <span class="ping-ring"></span>
+          <span class="relative w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></span>
+        </span>
         Monitorizando 8 promotoras en tiempo real
       </div>
-      <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-        Accede a tu <span class="text-transparent bg-clip-text brand-gradient">VPO en Madrid</span>
-        <br/>antes que nadie
+
+      <!-- Headline -->
+      <h1 class="font-display text-5xl md:text-6xl lg:text-7xl font-800 text-white leading-[1.08] tracking-tight mb-6">
+        Accede a tu <br class="hidden sm:block" />
+        <span class="text-gradient">VPO en Madrid</span><br />
+        antes que nadie
       </h1>
-      <p class="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-        Detectamos automáticamente nuevas promociones de Vivienda de Precio Tasado en Berrocales, Valdecarros, Ahijones y más. Tú decides; las inmobiliarias, fuera.
+
+      <!-- Subheadline -->
+      <p class="text-lg md:text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto mb-10" style="font-weight:300;">
+        Detectamos automáticamente nuevas promociones de Vivienda de Precio Tasado en
+        Berrocales, Valdecarros, Ahijones y más. Tú decides; las inmobiliarias, fuera.
       </p>
-      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-16">
         <button onclick="openModal('register')"
-          class="brand-gradient text-white font-semibold px-8 py-4 rounded-xl text-lg hover:opacity-90 transition-all shadow-lg shadow-indigo-900/50">
+          class="brand-gradient text-white font-semibold px-8 py-3.5 rounded-xl text-base btn-glow transition-all duration-200 w-full sm:w-auto">
           Empezar gratis — recibe alertas
         </button>
         <a href="/app.html"
-          class="border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 font-medium px-8 py-4 rounded-xl text-lg transition-all flex items-center gap-2 justify-center">
-          <i data-lucide="map" class="w-5 h-5"></i>
+          class="flex items-center justify-center gap-2 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 px-8 py-3.5 rounded-xl text-base transition-all duration-200 w-full sm:w-auto bg-white/[0.03] hover:bg-white/[0.06]">
+          <i data-lucide="map" class="w-4 h-4"></i>
           Ver mapa de promociones
         </a>
       </div>
-      <div class="grid grid-cols-3 gap-4 mt-14 max-w-lg mx-auto">
-        <div class="text-center">
-          <div class="text-3xl font-bold text-white" id="stat-promociones">–</div>
-          <div class="text-xs text-slate-400 mt-1">Promociones</div>
+
+      <!-- Stats bar -->
+      <div class="inline-grid grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+        <div class="bg-[#060c18] px-10 py-5 text-center">
+          <div class="stat-number text-3xl font-display font-700 text-white mb-1" id="stat-promociones">—</div>
+          <div class="text-xs text-slate-500 tracking-wide uppercase">Promociones</div>
         </div>
-        <div class="text-center border-x border-slate-800">
-          <div class="text-3xl font-bold text-white">8</div>
-          <div class="text-xs text-slate-400 mt-1">Promotoras</div>
+        <div class="bg-[#060c18] px-10 py-5 text-center">
+          <div class="stat-number text-3xl font-display font-700 text-white mb-1">8</div>
+          <div class="text-xs text-slate-500 tracking-wide uppercase">Promotoras</div>
         </div>
-        <div class="text-center">
-          <div class="text-3xl font-bold text-white" id="stat-nuevas">–</div>
-          <div class="text-xs text-slate-400 mt-1">Este mes</div>
+        <div class="bg-[#060c18] px-10 py-5 text-center">
+          <div class="stat-number text-3xl font-display font-700 text-white mb-1" id="stat-nuevas">—</div>
+          <div class="text-xs text-slate-500 tracking-wide uppercase">Este mes</div>
         </div>
       </div>
+
     </div>
   </section>
 
-  <!-- ── RADAR DE ACTIVIDAD ──────────────────────────────── -->
-  <section class="py-16 px-4 bg-slate-950">
+
+  <!-- ── RADAR DE ACTIVIDAD ──────────────────────────────────────────────────── -->
+  <section class="section-alt py-20 px-5">
     <div class="max-w-7xl mx-auto">
-      <div class="flex items-center justify-between mb-8">
+
+      <div class="flex items-end justify-between mb-10 reveal">
         <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="radar-live w-2 h-2 bg-green-400 rounded-full"></span>
-            <span class="text-xs text-green-400 font-medium uppercase tracking-wider">En Directo</span>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="relative inline-flex w-2 h-2">
+              <span class="ping-ring"></span>
+              <span class="relative w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></span>
+            </span>
+            <span class="mono text-xs text-emerald-400 tracking-widest uppercase">En directo</span>
           </div>
-          <h2 class="text-2xl font-bold text-white">Radar de Actividad</h2>
-          <p class="text-slate-400 text-sm mt-1">Últimos cambios detectados en webs de promotoras</p>
+          <h2 class="font-display text-2xl md:text-3xl font-700 text-white">Radar de Actividad</h2>
+          <p class="text-slate-400 text-sm mt-1.5">Últimos cambios detectados en webs de promotoras</p>
         </div>
-        <a href="/app.html" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-          Ver mapa completo <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        <a href="/app.html" class="hidden sm:flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+          Ver mapa completo
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
-      <div class="grid md:grid-cols-2 gap-4" id="radar-container">
-        <div class="animate-pulse space-y-3">
-          <div class="h-20 bg-slate-800 rounded-xl"></div>
-          <div class="h-20 bg-slate-800 rounded-xl"></div>
-          <div class="h-20 bg-slate-800 rounded-xl"></div>
+
+      <div class="grid md:grid-cols-2 gap-3" id="radar-container">
+        <!-- Loading skeletons -->
+        <div class="space-y-3">
+          <div class="h-[72px] bg-white/[0.03] rounded-xl animate-pulse"></div>
+          <div class="h-[72px] bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:.1s"></div>
+          <div class="h-[72px] bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:.2s"></div>
         </div>
-        <div class="animate-pulse space-y-3 hidden md:block">
-          <div class="h-20 bg-slate-800 rounded-xl"></div>
-          <div class="h-20 bg-slate-800 rounded-xl"></div>
-          <div class="h-20 bg-slate-800 rounded-xl"></div>
+        <div class="space-y-3 hidden md:block">
+          <div class="h-[72px] bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:.15s"></div>
+          <div class="h-[72px] bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:.25s"></div>
+          <div class="h-[72px] bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:.35s"></div>
         </div>
       </div>
+
     </div>
   </section>
 
-  <!-- ── ZONAS ───────────────────────────────────────────── -->
-  <section class="py-16 px-4" id="zonas">
+
+  <!-- ── ZONAS ──────────────────────────────────────────────────────────────── -->
+  <section class="py-20 px-5" id="zonas">
     <div class="max-w-7xl mx-auto">
-      <h2 class="text-2xl font-bold text-white mb-2">Nuevos Desarrollos de Madrid</h2>
-      <p class="text-slate-400 mb-8">Las zonas con mayor concentración de VPO y VPPL nuevas</p>
+
+      <div class="mb-12 reveal">
+        <p class="mono text-xs text-indigo-400 tracking-widest uppercase mb-3">Cobertura geográfica</p>
+        <h2 class="font-display text-2xl md:text-3xl font-700 text-white mb-2">Nuevos Desarrollos de Madrid</h2>
+        <p class="text-slate-400 text-sm">Las zonas con mayor concentración de VPO y VPPL nuevas</p>
+      </div>
+
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="zona-card border border-slate-700 rounded-xl p-5 card-hover">
-          <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-3">
+
+        <div class="card rounded-2xl p-6 reveal" style="transition-delay:.05s">
+          <div class="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-4">
             <i data-lucide="map-pin" class="w-5 h-5 text-indigo-400"></i>
           </div>
-          <h3 class="font-semibold text-white mb-1">Berrocales</h3>
-          <p class="text-sm text-slate-400">Sureste. ~15.000 viviendas previstas. Ibosa, Aurora, Hercesa.</p>
-          <a href="/app.html#berrocales" class="mt-3 text-xs text-indigo-400 flex items-center gap-1">
+          <h3 class="font-display font-700 text-white mb-2 text-base">Berrocales</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Sureste. ~15.000 viviendas previstas. Ibosa, Aurora, Hercesa.</p>
+          <a href="/app.html#berrocales" class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
             Ver promociones <i data-lucide="chevron-right" class="w-3 h-3"></i>
           </a>
         </div>
-        <div class="zona-card border border-slate-700 rounded-xl p-5 card-hover">
-          <div class="w-10 h-10 bg-violet-900/50 rounded-lg flex items-center justify-center mb-3">
+
+        <div class="card rounded-2xl p-6 reveal" style="transition-delay:.1s">
+          <div class="w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center mb-4">
             <i data-lucide="map-pin" class="w-5 h-5 text-violet-400"></i>
           </div>
-          <h3 class="font-semibold text-white mb-1">Valdecarros</h3>
-          <p class="text-sm text-slate-400">Sureste. El mayor desarrollo urbanístico de Europa. Ibosa, Serprocol.</p>
-          <a href="/app.html#valdecarros" class="mt-3 text-xs text-indigo-400 flex items-center gap-1">
+          <h3 class="font-display font-700 text-white mb-2 text-base">Valdecarros</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Sureste. El mayor desarrollo urbanístico de Europa. Ibosa, Serprocol.</p>
+          <a href="/app.html#valdecarros" class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
             Ver promociones <i data-lucide="chevron-right" class="w-3 h-3"></i>
           </a>
         </div>
-        <div class="zona-card border border-slate-700 rounded-xl p-5 card-hover">
-          <div class="w-10 h-10 bg-emerald-900/50 rounded-lg flex items-center justify-center mb-3">
+
+        <div class="card rounded-2xl p-6 reveal" style="transition-delay:.15s">
+          <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-4">
             <i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i>
           </div>
-          <h3 class="font-semibold text-white mb-1">Ahijones</h3>
-          <p class="text-sm text-slate-400">Sureste. Prygesa, Impulsa y Asentis activos.</p>
-          <a href="/app.html#ahijones" class="mt-3 text-xs text-indigo-400 flex items-center gap-1">
+          <h3 class="font-display font-700 text-white mb-2 text-base">Ahijones</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Sureste. Prygesa, Impulsa y Asentis activos.</p>
+          <a href="/app.html#ahijones" class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
             Ver promociones <i data-lucide="chevron-right" class="w-3 h-3"></i>
           </a>
         </div>
-        <div class="zona-card border border-slate-700 rounded-xl p-5 card-hover">
-          <div class="w-10 h-10 bg-amber-900/50 rounded-lg flex items-center justify-center mb-3">
+
+        <div class="card rounded-2xl p-6 reveal" style="transition-delay:.2s">
+          <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center mb-4">
             <i data-lucide="map-pin" class="w-5 h-5 text-amber-400"></i>
           </div>
-          <h3 class="font-semibold text-white mb-1">Los Cerros</h3>
-          <p class="text-sm text-slate-400">Sureste. EMVS Madrid y VPO municipales.</p>
-          <a href="/app.html#los_cerros" class="mt-3 text-xs text-indigo-400 flex items-center gap-1">
+          <h3 class="font-display font-700 text-white mb-2 text-base">Los Cerros</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Sureste. EMVS Madrid y VPO municipales.</p>
+          <a href="/app.html#los_cerros" class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
             Ver promociones <i data-lucide="chevron-right" class="w-3 h-3"></i>
           </a>
         </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ── CÓMO FUNCIONA ──────────────────────────────────── -->
-  <section class="py-16 px-4 bg-slate-950/50" id="como-funciona">
-    <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-2xl font-bold text-white mb-2">Cómo funciona MadridVPO</h2>
-      <p class="text-slate-400 mb-12">Sin intermediarios, sin inmobiliarias, sin comisiones</p>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="text-center">
-          <div class="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="radar" class="w-7 h-7 text-white"></i>
+
+  <!-- ── CÓMO FUNCIONA ──────────────────────────────────────────────────────── -->
+  <section class="section-alt py-20 px-5" id="como-funciona">
+    <div class="max-w-5xl mx-auto">
+
+      <div class="text-center mb-16 reveal">
+        <p class="mono text-xs text-indigo-400 tracking-widest uppercase mb-3">El proceso</p>
+        <h2 class="font-display text-2xl md:text-3xl font-700 text-white mb-3">Cómo funciona MadridVPO</h2>
+        <p class="text-slate-400 text-sm">Sin intermediarios, sin inmobiliarias, sin comisiones</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8 md:gap-6">
+
+        <div class="text-center reveal" style="transition-delay:.05s">
+          <div class="relative inline-block mb-6">
+            <div class="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center mx-auto glow-indigo">
+              <i data-lucide="radar" class="w-6 h-6 text-white"></i>
+            </div>
+            <div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+              <span class="font-display text-xs font-700 text-white">1</span>
+            </div>
           </div>
-          <h3 class="font-semibold text-white mb-2">1. Monitorizamos</h3>
-          <p class="text-sm text-slate-400">Escaneamos automáticamente las webs de 8 promotoras cada pocas horas. Detectamos nuevas promociones y cambios de estado al instante.</p>
+          <h3 class="font-display font-700 text-white text-base mb-3">Monitorizamos</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Escaneamos automáticamente las webs de 8 promotoras cada pocas horas. Detectamos nuevas promociones y cambios de estado al instante.</p>
         </div>
-        <div class="text-center">
-          <div class="w-14 h-14 bg-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="bell" class="w-7 h-7 text-white"></i>
+
+        <div class="text-center reveal" style="transition-delay:.1s">
+          <div class="relative inline-block mb-6">
+            <div class="w-14 h-14 bg-violet-600 rounded-2xl flex items-center justify-center mx-auto" style="box-shadow:0 0 32px rgba(124,58,237,0.3)">
+              <i data-lucide="bell" class="w-6 h-6 text-white"></i>
+            </div>
+            <div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center">
+              <span class="font-display text-xs font-700 text-white">2</span>
+            </div>
           </div>
-          <h3 class="font-semibold text-white mb-2">2. Te alertamos</h3>
-          <p class="text-sm text-slate-400">Configura tus criterios (zona, precio, dormitorios) y recibe alertas por email o Telegram. Los usuarios premium las reciben antes que nadie.</p>
+          <h3 class="font-display font-700 text-white text-base mb-3">Te alertamos</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Configura tus criterios (zona, precio, dormitorios) y recibe alertas por email o Telegram. Los usuarios premium las reciben antes que nadie.</p>
         </div>
-        <div class="text-center">
-          <div class="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="key" class="w-7 h-7 text-white"></i>
+
+        <div class="text-center reveal" style="transition-delay:.15s">
+          <div class="relative inline-block mb-6">
+            <div class="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center mx-auto" style="box-shadow:0 0 32px rgba(5,150,105,0.3)">
+              <i data-lucide="key" class="w-6 h-6 text-white"></i>
+            </div>
+            <div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+              <span class="font-display text-xs font-700 text-white">3</span>
+            </div>
           </div>
-          <h3 class="font-semibold text-white mb-2">3. Tú decides</h3>
-          <p class="text-sm text-slate-400">Accede al dossier completo, planos y precios directamente de la promotora. Sin comisiones. Sin intermediarios. La VPO es tuya.</p>
+          <h3 class="font-display font-700 text-white text-base mb-3">Tú decides</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Accede al dossier completo, planos y precios directamente de la promotora. Sin comisiones. Sin intermediarios. La VPO es tuya.</p>
         </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ── PLANES ──────────────────────────────────────────── -->
-  <section class="py-16 px-4" id="planes">
+
+  <!-- ── PLANES ─────────────────────────────────────────────────────────────── -->
+  <section class="py-20 px-5" id="planes">
     <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-10">
-        <h2 class="text-2xl font-bold text-white mb-2">Planes</h2>
-        <p class="text-slate-400">Empieza gratis. Mejora cuando lo necesites.</p>
+
+      <div class="text-center mb-14 reveal">
+        <p class="mono text-xs text-indigo-400 tracking-widest uppercase mb-3">Precios</p>
+        <h2 class="font-display text-2xl md:text-3xl font-700 text-white mb-3">Planes</h2>
+        <p class="text-slate-400 text-sm">Empieza gratis. Mejora cuando lo necesites.</p>
       </div>
+
       <div class="grid md:grid-cols-2 gap-6">
+
         <!-- Free -->
-        <div class="border border-slate-700 rounded-2xl p-6">
-          <div class="mb-4">
-            <div class="text-sm text-slate-400 mb-1">Gratuito</div>
-            <div class="text-3xl font-bold text-white">0€ <span class="text-base font-normal text-slate-400">/ mes</span></div>
+        <div class="card rounded-2xl p-7 reveal" style="transition-delay:.05s">
+          <div class="mb-6">
+            <span class="inline-block text-xs text-slate-500 font-medium tracking-wide uppercase mb-3 px-2.5 py-1 bg-white/5 rounded-full">Gratuito</span>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-display text-4xl font-800 text-white">0</span>
+              <span class="text-slate-400">€ / mes</span>
+            </div>
           </div>
-          <ul class="space-y-3 mb-6 text-sm">
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Acceso a todas las promociones (con 24h de retraso)</li>
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Alertas por email (con delay)</li>
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Mapa interactivo de Madrid</li>
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Mi Expediente personal</li>
-            <li class="flex items-center gap-2 text-slate-500 line-through"><i data-lucide="x" class="w-4 h-4 flex-shrink-0"></i>Alertas instantáneas</li>
-            <li class="flex items-center gap-2 text-slate-500 line-through"><i data-lucide="x" class="w-4 h-4 flex-shrink-0"></i>Documentos exclusivos</li>
+          <ul class="space-y-3.5 mb-7 text-sm">
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Acceso a todas las promociones <span class="text-slate-500">(con 24h de retraso)</span>
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Alertas por email <span class="text-slate-500">(con delay)</span>
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Mapa interactivo de Madrid
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Mi Expediente personal
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-600">
+              <i data-lucide="minus" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+              Alertas instantáneas
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-600">
+              <i data-lucide="minus" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+              Documentos exclusivos
+            </li>
           </ul>
-          <button onclick="openModal('register')" class="w-full border border-slate-600 text-white py-3 rounded-xl hover:border-indigo-500 transition-colors">
+          <button onclick="openModal('register')"
+            class="w-full border border-white/10 text-white py-3 rounded-xl hover:border-indigo-500/50 hover:bg-white/[0.03] transition-all duration-200 text-sm font-medium">
             Empezar gratis
           </button>
         </div>
+
         <!-- Premium -->
-        <div class="border-2 border-indigo-500 rounded-2xl p-6 relative">
-          <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-            <span class="badge-premium text-white text-xs font-bold px-3 py-1 rounded-full">MÁS POPULAR</span>
+        <div class="card-premium rounded-2xl p-7 reveal" style="transition-delay:.1s">
+          <div class="absolute -top-px left-1/2 -translate-x-1/2">
+            <span class="badge-premium text-white text-xs font-700 px-4 py-1 rounded-b-full tracking-wider">MAS POPULAR</span>
           </div>
-          <div class="mb-4">
-            <div class="text-sm text-indigo-400 mb-1">Premium</div>
-            <div class="text-3xl font-bold text-white">9,99€ <span class="text-base font-normal text-slate-400">/ mes</span></div>
+          <div class="mb-6 mt-3">
+            <span class="inline-block text-xs text-indigo-400 font-medium tracking-wide uppercase mb-3 px-2.5 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">Premium</span>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-display text-4xl font-800 text-white">9,99</span>
+              <span class="text-slate-400">€ / mes</span>
+            </div>
           </div>
-          <ul class="space-y-3 mb-6 text-sm">
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Todo lo de Gratuito</li>
-            <li class="flex items-center gap-2 text-white font-medium"><i data-lucide="zap" class="w-4 h-4 text-yellow-400 flex-shrink-0"></i>Alertas instantáneas — antes que nadie</li>
-            <li class="flex items-center gap-2 text-white font-medium"><i data-lucide="file-text" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>Documentos exclusivos (planos, memorias)</li>
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Alertas por Telegram en tiempo real</li>
-            <li class="flex items-center gap-2 text-slate-300"><i data-lucide="check" class="w-4 h-4 text-green-400 flex-shrink-0"></i>Sin publicidad, sin retrasos</li>
+          <ul class="space-y-3.5 mb-7 text-sm">
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Todo lo de Gratuito
+            </li>
+            <li class="flex items-start gap-2.5 text-white font-medium">
+              <i data-lucide="zap" class="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5"></i>
+              Alertas instantáneas — antes que nadie
+            </li>
+            <li class="flex items-start gap-2.5 text-white font-medium">
+              <i data-lucide="file-text" class="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+              Documentos exclusivos (planos, memorias)
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Alertas por Telegram en tiempo real
+            </li>
+            <li class="flex items-start gap-2.5 text-slate-300">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              Sin publicidad, sin retrasos
+            </li>
           </ul>
-          <button onclick="openModal('register')" class="w-full brand-gradient text-white py-3 rounded-xl hover:opacity-90 transition-opacity font-semibold">
+          <button onclick="openModal('register')"
+            class="w-full brand-gradient text-white py-3 rounded-xl btn-glow transition-all duration-200 text-sm font-semibold">
             Empezar Premium — 9,99€/mes
           </button>
         </div>
+
       </div>
-      <p class="text-center text-xs text-slate-500 mt-4">Los pagos están en desarrollo. Regístrate ahora gratis.</p>
+
+      <p class="text-center text-xs text-slate-600 mt-5">Los pagos están en desarrollo. Regístrate ahora gratis y reserva tu acceso premium.</p>
+
     </div>
   </section>
 
-  <!-- ── FOOTER ──────────────────────────────────────────── -->
-  <footer class="border-t border-slate-800 py-10 px-4 bg-slate-950">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+
+  <!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
+  <footer class="footer-bg py-10 px-5">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+
       <div class="flex items-center gap-2">
         <div class="w-6 h-6 brand-gradient rounded-md flex items-center justify-center">
           <i data-lucide="home" class="w-3 h-3 text-white"></i>
         </div>
-        <span class="font-semibold text-white">Madrid<span class="text-indigo-400">VPO</span></span>
-        <span class="text-slate-500 text-sm ml-2">© 2025</span>
+        <span class="font-display font-700 text-white text-sm">Madrid<span class="text-indigo-400">VPO</span></span>
+        <span class="text-slate-600 text-xs ml-2">© 2025</span>
       </div>
-      <div class="flex gap-6 text-sm text-slate-500">
+
+      <div class="flex gap-6 text-xs text-slate-500">
         <a href="#" class="hover:text-white transition-colors">Privacidad</a>
         <a href="#" class="hover:text-white transition-colors">Términos</a>
         <a href="mailto:hola@madridvpo.com" class="hover:text-white transition-colors">Contacto</a>
         <a href="/admin.html" class="hover:text-white transition-colors">Admin</a>
       </div>
+
     </div>
   </footer>
 
-  <!-- ── MODAL AUTH ──────────────────────────────────────── -->
-  <div id="modal-overlay" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4" style="display:none">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-8">
-      <div class="flex mb-6 border-b border-slate-700">
-        <button id="tab-login" onclick="switchTab('login')" class="flex-1 pb-3 text-sm font-medium text-white border-b-2 border-indigo-500 transition-colors">Iniciar sesión</button>
-        <button id="tab-register" onclick="switchTab('register')" class="flex-1 pb-3 text-sm font-medium text-slate-400 border-b-2 border-transparent transition-colors">Registrarse</button>
+
+  <!-- ── MODAL AUTH ──────────────────────────────────────────────────────────── -->
+  <div id="modal-overlay" class="modal-bg fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+    <div class="modal-card rounded-2xl w-full max-w-md p-8 relative shadow-2xl">
+
+      <!-- Tab nav -->
+      <div class="flex mb-7 border-b border-white/8">
+        <button id="tab-login" onclick="switchTab('login')"
+          class="flex-1 pb-3 text-sm font-medium text-white border-b-2 border-indigo-500 transition-colors">
+          Iniciar sesión
+        </button>
+        <button id="tab-register" onclick="switchTab('register')"
+          class="flex-1 pb-3 text-sm font-medium text-slate-500 border-b-2 border-transparent transition-colors">
+          Registrarse
+        </button>
       </div>
-      <!-- Login -->
+
+      <!-- Login form -->
       <form id="form-login" onsubmit="doLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Email</label>
-          <input type="email" id="login-email" required autocomplete="email" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" />
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Email</label>
+          <input type="email" id="login-email" required autocomplete="email"
+            class="input-field w-full rounded-lg px-3.5 py-2.5 text-white text-sm" />
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Contraseña</label>
-          <input type="password" id="login-pass" required autocomplete="current-password" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" />
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Contraseña</label>
+          <input type="password" id="login-pass" required autocomplete="current-password"
+            class="input-field w-full rounded-lg px-3.5 py-2.5 text-white text-sm" />
         </div>
-        <div id="login-error" class="text-red-400 text-sm" style="display:none"></div>
-        <button type="submit" id="login-btn" class="w-full brand-gradient text-white py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity">Entrar</button>
+        <div id="login-error" class="text-red-400 text-xs py-2 px-3 bg-red-900/20 rounded-lg border border-red-900/30" style="display:none"></div>
+        <button type="submit" id="login-btn"
+          class="w-full brand-gradient text-white py-2.5 rounded-xl font-medium hover:opacity-90 btn-glow transition-all duration-200 text-sm">
+          Entrar
+        </button>
       </form>
-      <!-- Register -->
+
+      <!-- Register form -->
       <form id="form-register" onsubmit="doRegister(event)" class="space-y-4" style="display:none">
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Nombre</label>
-          <input type="text" id="reg-nombre" required autocomplete="name" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" />
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Nombre</label>
+          <input type="text" id="reg-nombre" required autocomplete="name"
+            class="input-field w-full rounded-lg px-3.5 py-2.5 text-white text-sm" />
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Email</label>
-          <input type="email" id="reg-email" required autocomplete="email" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" />
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Email</label>
+          <input type="email" id="reg-email" required autocomplete="email"
+            class="input-field w-full rounded-lg px-3.5 py-2.5 text-white text-sm" />
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Contraseña (mínimo 8 caracteres)</label>
-          <input type="password" id="reg-pass" required minlength="8" autocomplete="new-password" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" />
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Contraseña <span class="text-slate-600">(mínimo 8 caracteres)</span></label>
+          <input type="password" id="reg-pass" required minlength="8" autocomplete="new-password"
+            class="input-field w-full rounded-lg px-3.5 py-2.5 text-white text-sm" />
         </div>
-        <div id="reg-error" class="text-red-400 text-sm" style="display:none"></div>
-        <button type="submit" id="reg-btn" class="w-full brand-gradient text-white py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity">Crear cuenta gratis</button>
-        <p class="text-xs text-slate-500 text-center">Sin spam. Cancela cuando quieras.</p>
+        <div id="reg-error" class="text-red-400 text-xs py-2 px-3 bg-red-900/20 rounded-lg border border-red-900/30" style="display:none"></div>
+        <button type="submit" id="reg-btn"
+          class="w-full brand-gradient text-white py-2.5 rounded-xl font-medium hover:opacity-90 btn-glow transition-all duration-200 text-sm">
+          Crear cuenta gratis
+        </button>
+        <p class="text-xs text-slate-600 text-center">Sin spam. Cancela cuando quieras.</p>
       </form>
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white" style="position:absolute;top:1.5rem;right:1.5rem">
-        <i data-lucide="x" class="w-5 h-5"></i>
+
+      <!-- Close button -->
+      <button onclick="closeModal()" class="absolute top-5 right-5 p-1.5 text-slate-500 hover:text-white hover:bg-white/8 rounded-lg transition-all">
+        <i data-lucide="x" class="w-4 h-4"></i>
       </button>
+
     </div>
   </div>
 
-  <!-- ── TOAST ───────────────────────────────────────────── -->
+
+  <!-- ── TOAST ──────────────────────────────────────────────────────────────── -->
   <div id="toast" class="fixed bottom-6 right-6 z-50" style="display:none">
-    <div class="flex items-center gap-3 bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 shadow-xl min-w-64">
-      <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-green-400 flex-shrink-0"></i>
+    <div class="flex items-center gap-3 bg-[#0d1526] border border-white/8 rounded-xl px-4 py-3 shadow-2xl min-w-64" style="box-shadow: 0 8px 32px rgba(0,0,0,0.4)">
+      <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
       <span id="toast-msg" class="text-sm text-white"></span>
     </div>
   </div>
 
+
+  <!-- ── SCRIPTS (no modificar) ─────────────────────────────────────────────── -->
   <script type="module">
     import api from '/js/api.js';
 
@@ -517,6 +859,18 @@
     cargarRadar();
     cargarStats();
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // ── Scroll reveal ─────────────────────────────────────
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(el => {
+        if (el.isIntersecting) {
+          el.target.classList.add('visible');
+          observer.unobserve(el.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
   </script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
