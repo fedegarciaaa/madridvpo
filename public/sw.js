@@ -1,4 +1,4 @@
-const CACHE = 'mvpo-v1';
+const CACHE = 'mvpo-v2';
 
 const ASSETS = [
   '/',
