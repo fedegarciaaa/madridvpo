@@ -1,0 +1,14 @@
+# Normalizar saltos de línea
+* text=auto
+*.bat text eol=crlf
+*.sql text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.ico binary

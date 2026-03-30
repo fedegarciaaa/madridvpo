@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MadridVPO — Mapa de Promociones VPO</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#4c6ef5" />
+
+  <!-- Mapbox GL JS -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { brand: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5' } } } }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root { color-scheme: dark; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #030712; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; height: 100dvh; display: flex; flex-direction: column; }
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+    .badge-premium { background: linear-gradient(90deg, #f59e0b, #d97706); }
+
+    /* Layout */
+    #main-layout { display: flex; flex: 1; overflow: hidden; }
+    #sidebar { width: 380px; min-width: 320px; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0f172a; overflow: hidden; }
+    #map-container { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+
+    /* Sidebar */
+    #sidebar-header { padding: 12px 16px; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+    #filters-bar { padding: 10px 12px; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+    #promo-list { flex: 1; overflow-y: auto; padding: 8px; }
+    #promo-list::-webkit-scrollbar { width: 4px; }
+    #promo-list::-webkit-scrollbar-track { background: transparent; }
+    #promo-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+    /* Promo card */
+    .promo-card { border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all .15s; background: #1e293b; }
+    .promo-card:hover { border-color: #4f46e5; background: #1e3a5f; }
+    .promo-card.selected { border-color: #6366f1; background: #1e284a; }
+
+    /* Estado badge */
+    .estado-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+    .estado-en_proyecto      { background: #1e3a5f; color: #60a5fa; }
+    .estado-en_construccion  { background: #1c3829; color: #34d399; }
+    .estado-lista_espera     { background: #3d2a00; color: #fbbf24; }
+    .estado-sorteo           { background: #3b1f40; color: #c084fc; }
+    .estado-entregado        { background: #1e293b; color: #94a3b8; }
+
+    /* Mapbox popup */
+    .mapboxgl-popup-content { background: #1e293b !important; color: #e2e8f0 !important; border: 1px solid #334155 !important; border-radius: 10px !important; padding: 14px !important; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; }
+    .mapboxgl-popup-tip { border-top-color: #1e293b !important; border-bottom-color: #1e293b !important; }
+    .mapboxgl-popup-close-button { color: #94a3b8 !important; font-size: 18px !important; }
+
+    /* Panel detalle */
+    #detail-panel { position: absolute; top: 12px; right: 12px; bottom: 12px; width: 360px; background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; overflow-y: auto; transform: translateX(120%); transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 10; }
+    #detail-panel.open { transform: translateX(0); }
+    #detail-panel::-webkit-scrollbar { width: 4px; }
+    #detail-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+    /* Marcadores */
+    .marker-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,.5); cursor: pointer; }
+    .marker-en_proyecto     { background: #3b82f6; }
+    .marker-en_construccion { background: #10b981; }
+    .marker-lista_espera    { background: #f59e0b; }
+    .marker-sorteo          { background: #a855f7; }
+    .marker-entregado       { background: #6b7280; }
+
+    /* Filtros */
+    .filter-select { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 5px 8px; font-size: 12px; outline: none; }
+    .filter-select:focus { border-color: #6366f1; }
+
+    /* Tabs vistas */
+    .view-tab { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; color: #94a3b8; }
+    .view-tab.active { background: #1e293b; color: white; }
+
+    /* Mobile: ocultar sidebar en pantallas pequeñas */
+    @media (max-width: 768px) {
+      #sidebar { position: absolute; left: 0; top: 0; bottom: 0; z-index: 20; transform: translateX(-100%); transition: transform .3s; }
+      #sidebar.mobile-open { transform: translateX(0); }
+      #mobile-toggle { display: flex !important; }
+    }
+  </style>
+</head>
+<body class="dark">
+
+  <!-- ── TOPBAR ──────────────────────────────────────────── -->
+  <header class="h-14 bg-slate-950 border-b border-slate-800 flex items-center px-4 gap-3 flex-shrink-0 z-30">
+    <!-- Mobile toggle -->
+    <button id="mobile-toggle" onclick="toggleSidebar()" class="hidden p-1.5 text-slate-400 hover:text-white" style="display:none">
+      <i data-lucide="list" class="w-5 h-5"></i>
+    </button>
+
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-1.5 font-bold text-sm">
+      <div class="w-7 h-7 brand-gradient rounded-md flex items-center justify-center">
+        <i data-lucide="home" class="w-3.5 h-3.5 text-white"></i>
+      </div>
+      <span class="text-white hidden sm:inline">Madrid<span class="text-indigo-400">VPO</span></span>
+    </a>
+
+    <!-- Vista tabs -->
+    <div class="flex gap-1 bg-slate-900 p-1 rounded-lg ml-2">
+      <button id="tab-lista" class="view-tab active" onclick="setView('lista')">
+        <i data-lucide="list" class="w-3.5 h-3.5 inline mr-1"></i>Lista
+      </button>
+      <button id="tab-mapa" class="view-tab" onclick="setView('mapa')">
+        <i data-lucide="map" class="w-3.5 h-3.5 inline mr-1"></i>Mapa
+      </button>
+    </div>
+
+    <div class="flex-1"></div>
+
+    <!-- Contador -->
+    <span id="total-badge" class="text-xs text-slate-500 hidden sm:inline"></span>
+
+    <!-- Modo oscuro -->
+    <button onclick="toggleTheme()" class="p-1.5 text-slate-400 hover:text-white transition-colors" title="Cambiar tema">
+      <i data-lucide="moon" class="w-4 h-4" id="theme-icon"></i>
+    </button>
+
+    <!-- Auth -->
+    <div id="nav-auth" class="flex items-center gap-2">
+      <a href="/" class="text-xs text-slate-400 hover:text-white">Entrar</a>
+    </div>
+  </header>
+
+  <!-- ── MAIN LAYOUT ─────────────────────────────────────── -->
+  <div id="main-layout">
+
+    <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+    <aside id="sidebar">
+
+      <!-- Buscador y filtros -->
+      <div id="sidebar-header">
+        <div class="relative mb-2">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="search-input" placeholder="Buscar promoción, zona…"
+            oninput="onSearch(this.value)"
+            class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+        </div>
+      </div>
+
+      <div id="filters-bar">
+        <div class="flex flex-wrap gap-2">
+          <select id="f-zona" onchange="aplicarFiltros()" class="filter-select">
+            <option value="">Todas las zonas</option>
+            <option value="berrocales">Berrocales</option>
+            <option value="valdecarros">Valdecarros</option>
+            <option value="ahijones">Ahijones</option>
+            <option value="los_cerros">Los Cerros</option>
+            <option value="el_cañaveral">El Cañaveral</option>
+          </select>
+          <select id="f-tipo" onchange="aplicarFiltros()" class="filter-select">
+            <option value="">Tipo</option>
+            <option value="VPO">VPO</option>
+            <option value="VPPL">VPPL</option>
+            <option value="cooperativa">Cooperativa</option>
+          </select>
+          <select id="f-estado" onchange="aplicarFiltros()" class="filter-select">
+            <option value="">Estado</option>
+            <option value="en_proyecto">En proyecto</option>
+            <option value="en_construccion">En construcción</option>
+            <option value="lista_espera">Lista de espera</option>
+            <option value="sorteo">Sorteo</option>
+            <option value="entregado">Entregado</option>
+          </select>
+          <select id="f-dorm" onchange="aplicarFiltros()" class="filter-select">
+            <option value="">Dorm.</option>
+            <option value="1">1+</option>
+            <option value="2">2+</option>
+            <option value="3">3+</option>
+            <option value="4">4+</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <input type="range" id="f-precio" min="0" max="400000" step="10000" value="400000"
+            oninput="document.getElementById('precio-label').textContent = this.value >= 400000 ? 'Sin límite' : formatPrice(+this.value); aplicarFiltros()"
+            class="flex-1 accent-indigo-500" />
+          <span id="precio-label" class="text-xs text-slate-400 whitespace-nowrap">Sin límite</span>
+        </div>
+        <button onclick="resetFiltros()" class="mt-1 text-xs text-slate-500 hover:text-indigo-400">Limpiar filtros</button>
+      </div>
+
+      <!-- Lista de promociones -->
+      <div id="promo-list">
+        <div id="list-loading" class="p-4 text-center text-slate-500 text-sm">
+          <i data-lucide="loader" class="w-5 h-5 animate-spin mx-auto mb-2"></i>
+          Cargando promociones…
+        </div>
+        <div id="list-items" class="hidden"></div>
+        <div id="list-empty" class="hidden p-6 text-center text-slate-500">
+          <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+          <p class="text-sm">No hay promociones con esos filtros</p>
+        </div>
+        <div id="list-footer" class="hidden p-3 text-center">
+          <button id="load-more-btn" onclick="cargarMas()" class="text-xs text-indigo-400 hover:text-indigo-300">
+            Cargar más
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── MAPA ────────────────────────────────────────────── -->
+    <div id="map-container">
+      <div id="map"></div>
+
+      <!-- Leyenda -->
+      <div class="absolute bottom-6 left-4 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl p-3 text-xs hidden sm:block">
+        <div class="text-slate-400 mb-2 font-medium">Estado de la promoción</div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span><span class="text-slate-300">En proyecto</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span><span class="text-slate-300">En construcción</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span><span class="text-slate-300">Lista de espera</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span><span class="text-slate-300">Sorteo</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-gray-500 inline-block"></span><span class="text-slate-300">Entregado</span></div>
+        </div>
+      </div>
+
+      <!-- Panel detalle -->
+      <div id="detail-panel">
+        <div id="detail-content" class="p-5">
+          <!-- Se rellena por JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOAST ───────────────────────────────────────────── -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50" style="display:none">
+    <div class="flex items-center gap-3 bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 shadow-xl">
+      <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-green-400 flex-shrink-0"></i>
+      <span id="toast-msg" class="text-sm text-white"></span>
+    </div>
+  </div>
+
+  <script type="module">
+    import api from '/js/api.js';
+
+    // ── Config ─────────────────────────────────────────────
+    const MAPBOX_TOKEN = 'pk.eyJ1IjoiZmVkZXhlbGUiLCJhIjoiY2tyYXZ5NzFlMTBmZTJ1cDhocTh4ejUwYiJ9.70OYqkXXbLJgn3Ioi06m3w';
+    const MADRID_CENTER = [-3.6833, 40.4167];
+
+    // ── Estado ────────────────────────────────────────────
+    const state = {
+      promociones: [],
+      filtradas: [],
+      pagina: 1,
+      limite: 20,
+      total: 0,
+      loading: false,
+      selectedId: null,
+      view: 'lista', // 'lista' | 'mapa'
+      filtros: { zona: '', tipo: '', estado: '', dormitorios: '', precioMax: 400000, buscar: '' },
+      markers: new Map(),
+      map: null,
+    };
+
+    // ── Tema ──────────────────────────────────────────────
+    const savedTheme = localStorage.getItem('mvpo_theme') || 'dark';
+    if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+    window.toggleTheme = () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('mvpo_theme', isDark ? 'dark' : 'light');
+      document.getElementById('theme-icon').setAttribute('data-lucide', isDark ? 'moon' : 'sun');
+      lucide.createIcons();
+      if (state.map) state.map.setStyle(isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12');
+    };
+
+    // ── Init ──────────────────────────────────────────────
+    lucide.createIcons();
+    updateNav();
+    initMap();
+    cargarPromociones();
+
+    // Hash routing: #berrocales → filtro automático
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const zonaMap = { berrocales: 'berrocales', valdecarros: 'valdecarros', ahijones: 'ahijones', los_cerros: 'los_cerros' };
+      if (zonaMap[hash]) {
+        state.filtros.zona = zonaMap[hash];
+        document.getElementById('f-zona').value = zonaMap[hash];
+      }
+    }
+
+    // ── Navbar ────────────────────────────────────────────
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (api.isLogged()) {
+        const user = api.getUser();
+        navAuth.innerHTML = `
+          <div class="flex items-center gap-2">
+            <a href="/perfil.html" class="flex items-center gap-1.5 hover:opacity-80 transition-opacity" title="Mi perfil">
+              <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                ${(user?.nombre || 'U')[0].toUpperCase()}
+              </div>
+              <span class="text-sm text-white hidden sm:inline">${user?.nombre?.split(' ')[0] || ''}</span>
+            </a>
+            ${user?.plan === 'premium' ? '<span class="badge-premium text-white text-xs px-2 py-0.5 rounded-full">PRO</span>' : ''}
+            <a href="/" onclick="doLogout(event)" class="text-xs text-slate-500 hover:text-red-400 ml-1">Salir</a>
+          </div>`;
+      } else {
+        navAuth.innerHTML = `<a href="/" class="text-xs text-slate-400 hover:text-white">Entrar</a>`;
+      }
+    }
+    window.doLogout = async (e) => {
+      e.preventDefault();
+      try { await api.logout(); } catch {}
+      window.location.href = '/';
+    };
+
+    // ── Mapa ──────────────────────────────────────────────
+    function initMap() {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      state.map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: MADRID_CENTER,
+        zoom: 10.5,
+      });
+
+      state.map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+      state.map.addControl(new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false }), 'bottom-right');
+
+      state.map.on('load', () => {
+        // Cargar GeoJSON de marcadores
+        cargarGeoJSON();
+      });
+    }
+
+    async function cargarGeoJSON() {
+      try {
+        const geojson = await api.geojson();
+
+        if (state.map.getSource('promociones')) {
+          state.map.getSource('promociones').setData(geojson);
+          return;
+        }
+
+        state.map.addSource('promociones', { type: 'geojson', data: geojson, cluster: true, clusterMaxZoom: 13, clusterRadius: 50 });
+
+        // Capa: clusters
+        state.map.addLayer({
+          id: 'clusters', type: 'circle', source: 'promociones',
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-color': ['step', ['get', 'point_count'], '#4f46e5', 5, '#7c3aed', 15, '#9333ea'],
+            'circle-radius': ['step', ['get', 'point_count'], 20, 5, 26, 15, 32],
+            'circle-opacity': 0.85
+          }
+        });
+
+        // Etiquetas clusters
+        state.map.addLayer({
+          id: 'cluster-count', type: 'symbol', source: 'promociones',
+          filter: ['has', 'point_count'],
+          layout: { 'text-field': '{point_count_abbreviated}', 'text-size': 13 },
+          paint: { 'text-color': '#ffffff' }
+        });
+
+        // Capa: puntos individuales
+        const ESTADO_COLORS = {
+          en_proyecto: '#3b82f6', en_construccion: '#10b981',
+          lista_espera: '#f59e0b', sorteo: '#a855f7', entregado: '#6b7280'
+        };
+        state.map.addLayer({
+          id: 'unclustered', type: 'circle', source: 'promociones',
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': [
+              'match', ['get', 'estado'],
+              'en_proyecto', ESTADO_COLORS.en_proyecto,
+              'en_construccion', ESTADO_COLORS.en_construccion,
+              'lista_espera', ESTADO_COLORS.lista_espera,
+              'sorteo', ESTADO_COLORS.sorteo,
+              '#6b7280'
+            ],
+            'circle-radius': 9,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#fff',
+            'circle-opacity': 0.9
+          }
+        });
+
+        // Etiquetas individuales
+        state.map.addLayer({
+          id: 'unclustered-label', type: 'symbol', source: 'promociones',
+          filter: ['!', ['has', 'point_count']],
+          layout: { 'text-field': ['get', 'nombre'], 'text-size': 10, 'text-offset': [0, 1.5], 'text-optional': true },
+          paint: { 'text-color': '#e2e8f0', 'text-halo-color': '#030712', 'text-halo-width': 1 }
+        });
+
+        // Click en cluster → zoom in
+        state.map.on('click', 'clusters', (e) => {
+          const features = state.map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+          state.map.getSource('promociones').getClusterExpansionZoom(features[0].properties.cluster_id, (err, zoom) => {
+            if (err) return;
+            state.map.easeTo({ center: features[0].geometry.coordinates, zoom });
+          });
+        });
+
+        // Click en punto → mostrar detalle
+        state.map.on('click', 'unclustered', (e) => {
+          const p = e.features[0].properties;
+          mostrarDetalle(p.id);
+          const tarjeta = document.querySelector(`.promo-card[data-id="${p.id}"]`);
+          if (tarjeta) tarjeta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+
+        // Hover: cursor pointer
+        state.map.on('mouseenter', 'clusters',     () => { state.map.getCanvas().style.cursor = 'pointer'; });
+        state.map.on('mouseleave', 'clusters',     () => { state.map.getCanvas().style.cursor = ''; });
+        state.map.on('mouseenter', 'unclustered',  () => { state.map.getCanvas().style.cursor = 'pointer'; });
+        state.map.on('mouseleave', 'unclustered',  () => { state.map.getCanvas().style.cursor = ''; });
+
+      } catch (e) {
+        console.error('GeoJSON error:', e);
+      }
+    }
+
+    // ── Carga de promociones ──────────────────────────────
+    async function cargarPromociones(reset = true) {
+      if (state.loading) return;
+      state.loading = true;
+      if (reset) { state.pagina = 1; state.promociones = []; }
+
+      const elLoading = document.getElementById('list-loading');
+      const elItems   = document.getElementById('list-items');
+      const elEmpty   = document.getElementById('list-empty');
+      const elFooter  = document.getElementById('list-footer');
+
+      if (reset) {
+        elLoading.style.display = ''; elItems.classList.add('hidden');
+        elEmpty.classList.add('hidden'); elFooter.classList.add('hidden');
+      }
+
+      try {
+        const params = {
+          pagina: state.pagina,
+          limite: state.limite,
+          ...(state.filtros.zona        && { zona: state.filtros.zona }),
+          ...(state.filtros.tipo        && { tipo: state.filtros.tipo }),
+          ...(state.filtros.estado      && { estado: state.filtros.estado }),
+          ...(state.filtros.dormitorios && { dormitorios: state.filtros.dormitorios }),
+          ...(state.filtros.precioMax < 400000 && { precioMax: state.filtros.precioMax }),
+          ...(state.filtros.buscar      && { buscar: state.filtros.buscar }),
+        };
+
+        const data = await api.promociones(params);
+        const nuevas = Array.isArray(data) ? data : (data.promociones || []);
+        state.total = data.total || nuevas.length;
+
+        if (reset) state.promociones = nuevas;
+        else state.promociones.push(...nuevas);
+
+        // Filtro local de búsqueda
+        state.filtradas = state.filtros.buscar
+          ? state.promociones.filter(p =>
+              p.nombre.toLowerCase().includes(state.filtros.buscar.toLowerCase()) ||
+              (p.zona || '').toLowerCase().includes(state.filtros.buscar.toLowerCase())
+            )
+          : state.promociones;
+
+        renderLista();
+
+        document.getElementById('total-badge').textContent =
+          state.total ? `${state.total} promoción${state.total !== 1 ? 'es' : ''}` : '';
+
+        elLoading.style.display = 'none';
+        if (state.filtradas.length === 0) {
+          elEmpty.classList.remove('hidden');
+        } else {
+          elItems.classList.remove('hidden');
+          const hayMas = state.promociones.length < state.total;
+          elFooter.classList.toggle('hidden', !hayMas);
+        }
+
+      } catch (e) {
+        elLoading.style.display = 'none';
+        elEmpty.classList.remove('hidden');
+        elEmpty.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`;
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    window.cargarMas = async () => {
+      state.pagina++;
+      await cargarPromociones(false);
+    };
+
+    // ── Render lista ──────────────────────────────────────
+    function renderLista() {
+      const container = document.getElementById('list-items');
+      container.innerHTML = state.filtradas.map(p => promoCard(p)).join('');
+      lucide.createIcons();
+    }
+
+    function promoCard(p) {
+      const estadoLabel = {
+        en_proyecto: 'En proyecto', en_construccion: 'En construcción',
+        lista_espera: 'Lista de espera', sorteo: 'Sorteo', entregado: 'Entregado'
+      };
+      const precioText = p.precio_desde
+        ? `${formatPrice(p.precio_desde)}${p.precio_hasta ? '–' + formatPrice(p.precio_hasta) : ''}`
+        : 'Consultar precio';
+      const esPremiumLocked = p.es_premium_only && !api.isPremium();
+
+      return `
+        <div class="promo-card${state.selectedId === p.id ? ' selected' : ''}" data-id="${p.id}" onclick="mostrarDetalle(${p.id})">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-white text-sm leading-tight truncate">${p.nombre}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">${p.promotora_nombre || ''} · ${p.zona || '–'}</p>
+            </div>
+            <span class="estado-badge estado-${p.estado} flex-shrink-0">${estadoLabel[p.estado] || p.estado}</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-slate-300">
+            ${p.tipo ? `<span class="bg-slate-700 px-2 py-0.5 rounded">${p.tipo}</span>` : ''}
+            ${p.dormitorios_min ? `<span><i data-lucide="bed-double" class="w-3 h-3 inline text-slate-400 mr-0.5"></i>${p.dormitorios_min}${p.dormitorios_max && p.dormitorios_max !== p.dormitorios_min ? '–'+p.dormitorios_max : ''}</span>` : ''}
+            ${p.m2_desde ? `<span>${p.m2_desde}${p.m2_hasta ? '–'+p.m2_hasta : ''}m²</span>` : ''}
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-sm font-semibold ${esPremiumLocked ? 'text-slate-500' : 'text-indigo-300'}">
+              ${esPremiumLocked ? '🔒 Solo Premium' : precioText}
+            </span>
+            ${p.fecha_entrega_est ? `<span class="text-xs text-slate-500">Entrega: ${new Date(p.fecha_entrega_est).getFullYear()}</span>` : ''}
+          </div>
+        </div>`;
+    }
+
+    // ── Detalle ───────────────────────────────────────────
+    window.mostrarDetalle = async (id) => {
+      state.selectedId = id;
+      // Highlight tarjeta
+      document.querySelectorAll('.promo-card').forEach(c => c.classList.toggle('selected', c.dataset.id == id));
+
+      const panel = document.getElementById('detail-panel');
+      const content = document.getElementById('detail-content');
+      content.innerHTML = `<div class="flex items-center justify-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin text-indigo-400"></i></div>`;
+      panel.classList.add('open');
+      lucide.createIcons();
+
+      try {
+        const p = await api.promocion(id);
+        content.innerHTML = renderDetalle(p);
+        lucide.createIcons();
+
+        // Centrar mapa en el marcador si tiene coords
+        if (p.lat && p.lng && state.map) {
+          state.map.flyTo({ center: [p.lng, p.lat], zoom: 14, speed: 1.2 });
+        }
+      } catch (e) {
+        content.innerHTML = `<p class="text-red-400 text-sm p-4">${e.message}</p>`;
+      }
+    };
+
+    window.cerrarDetalle = () => {
+      document.getElementById('detail-panel').classList.remove('open');
+      state.selectedId = null;
+      document.querySelectorAll('.promo-card').forEach(c => c.classList.remove('selected'));
+    };
+
+    function renderDetalle(p) {
+      const estadoLabel = { en_proyecto: 'En proyecto', en_construccion: 'En construcción', lista_espera: 'Lista de espera', sorteo: 'Sorteo', entregado: 'Entregado' };
+      const isPremium = api.isPremium();
+
+      return `
+        <div>
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1 min-w-0">
+              <span class="estado-badge estado-${p.estado} mb-2 inline-block">${estadoLabel[p.estado] || p.estado}</span>
+              <h2 class="text-lg font-bold text-white leading-tight">${p.nombre}</h2>
+              <p class="text-sm text-slate-400 mt-1">${p.promotora?.nombre || ''} · ${p.zona || ''}</p>
+            </div>
+            <button onclick="cerrarDetalle()" class="ml-2 p-1.5 text-slate-400 hover:text-white flex-shrink-0">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Precio -->
+          <div class="bg-slate-800 rounded-xl p-4 mb-4">
+            <div class="text-xs text-slate-400 mb-1">Precio desde</div>
+            ${p.precio_desde
+              ? `<div class="text-2xl font-bold text-indigo-300">${formatPrice(p.precio_desde)}</div>
+                 ${p.precio_hasta ? `<div class="text-sm text-slate-400">hasta ${formatPrice(p.precio_hasta)}</div>` : ''}`
+              : `<div class="text-lg font-semibold text-slate-400">Precio no disponible</div>`
+            }
+          </div>
+
+          <!-- Características -->
+          <div class="grid grid-cols-3 gap-3 mb-4">
+            ${p.tipo         ? `<div class="bg-slate-800 rounded-lg p-3 text-center"><div class="text-xs text-slate-400 mb-1">Tipo</div><div class="text-sm font-semibold text-white">${p.tipo}</div></div>` : ''}
+            ${p.dormitorios_min ? `<div class="bg-slate-800 rounded-lg p-3 text-center"><div class="text-xs text-slate-400 mb-1">Dormitorios</div><div class="text-sm font-semibold text-white">${p.dormitorios_min}${p.dormitorios_max && p.dormitorios_max !== p.dormitorios_min ? '–'+p.dormitorios_max : ''}</div></div>` : ''}
+            ${p.m2_desde     ? `<div class="bg-slate-800 rounded-lg p-3 text-center"><div class="text-xs text-slate-400 mb-1">Superficie</div><div class="text-sm font-semibold text-white">${p.m2_desde}${p.m2_hasta ? '–'+p.m2_hasta : ''}m²</div></div>` : ''}
+            ${p.fecha_entrega_est ? `<div class="bg-slate-800 rounded-lg p-3 text-center"><div class="text-xs text-slate-400 mb-1">Entrega est.</div><div class="text-sm font-semibold text-white">${new Date(p.fecha_entrega_est).toLocaleDateString('es-ES', {month:'short',year:'numeric'})}</div></div>` : ''}
+          </div>
+
+          <!-- Descripción -->
+          ${p.descripcion ? `<div class="mb-4"><p class="text-sm text-slate-300 leading-relaxed">${p.descripcion}</p></div>` : ''}
+
+          <!-- Documentos -->
+          ${p.documentos?.length ? `
+            <div class="mb-4">
+              <h3 class="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i> Documentos
+              </h3>
+              ${p.documentos.map(d => {
+                if (d.solo_premium && !isPremium) {
+                  return `<div class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/50 opacity-60 mb-1">
+                    <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+                    <span class="text-sm text-slate-400 flex-1">${d.nombre}</span>
+                    <span class="badge-premium text-white text-xs px-2 py-0.5 rounded-full">Premium</span>
+                  </div>`;
+                }
+                return `<a href="/api/documentos/${d.id}" target="_blank" class="flex items-center gap-2 p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors mb-1">
+                  <i data-lucide="download" class="w-4 h-4 text-indigo-400"></i>
+                  <span class="text-sm text-white flex-1">${d.nombre}</span>
+                  <span class="text-xs text-slate-400">${d.tipo}</span>
+                </a>`;
+              }).join('')}
+            </div>
+          ` : ''}
+
+          <!-- Acciones -->
+          <div class="space-y-2">
+            ${p.web_oficial ? `
+              <a href="${p.web_oficial}" target="_blank" rel="noopener"
+                class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-sm font-medium transition-colors">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                Ver en web oficial
+              </a>` : ''}
+            ${!api.isLogged()
+              ? `<a href="/" class="w-full flex items-center justify-center gap-2 border border-indigo-500 text-indigo-400 hover:bg-indigo-900/30 py-2.5 rounded-xl text-sm font-medium transition-colors">
+                  <i data-lucide="bell" class="w-4 h-4"></i> Regístrate para recibir alertas
+                </a>`
+              : `<a href="/perfil.html" class="w-full flex items-center justify-center gap-2 border border-slate-600 text-slate-300 hover:border-indigo-500 py-2.5 rounded-xl text-sm font-medium transition-colors">
+                  <i data-lucide="star" class="w-4 h-4"></i> Añadir a Mi Expediente
+                </a>`
+            }
+          </div>
+        </div>`;
+    }
+
+    // ── Filtros ───────────────────────────────────────────
+    window.aplicarFiltros = () => {
+      state.filtros.zona        = document.getElementById('f-zona').value;
+      state.filtros.tipo        = document.getElementById('f-tipo').value;
+      state.filtros.estado      = document.getElementById('f-estado').value;
+      state.filtros.dormitorios = document.getElementById('f-dorm').value;
+      state.filtros.precioMax   = parseInt(document.getElementById('f-precio').value);
+      cargarPromociones(true);
+    };
+
+    let _searchTimer;
+    window.onSearch = (val) => {
+      clearTimeout(_searchTimer);
+      state.filtros.buscar = val;
+      _searchTimer = setTimeout(() => cargarPromociones(true), 400);
+    };
+
+    window.resetFiltros = () => {
+      state.filtros = { zona: '', tipo: '', estado: '', dormitorios: '', precioMax: 400000, buscar: '' };
+      document.getElementById('f-zona').value  = '';
+      document.getElementById('f-tipo').value  = '';
+      document.getElementById('f-estado').value = '';
+      document.getElementById('f-dorm').value  = '';
+      document.getElementById('f-precio').value = 400000;
+      document.getElementById('precio-label').textContent = 'Sin límite';
+      document.getElementById('search-input').value = '';
+      cargarPromociones(true);
+    };
+
+    // ── Vista ─────────────────────────────────────────────
+    window.setView = (view) => {
+      state.view = view;
+      document.getElementById('tab-lista').classList.toggle('active', view === 'lista');
+      document.getElementById('tab-mapa').classList.toggle('active', view === 'mapa');
+
+      const sidebar = document.getElementById('sidebar');
+      if (view === 'mapa' && window.innerWidth < 768) {
+        sidebar.classList.remove('mobile-open');
+      } else if (view === 'lista' && window.innerWidth < 768) {
+        sidebar.classList.add('mobile-open');
+      }
+
+      if (view === 'mapa' && state.map) {
+        setTimeout(() => state.map.resize(), 300);
+      }
+    };
+
+    window.toggleSidebar = () => {
+      document.getElementById('sidebar').classList.toggle('mobile-open');
+    };
+
+    // ── Helpers ───────────────────────────────────────────
+    window.formatPrice = (n) => {
+      if (!n) return '–';
+      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+    };
+
+    window.showToast = (msg, type = 'success') => {
+      const icons  = { success: 'check-circle', error: 'alert-circle', info: 'info' };
+      const colors = { success: 'text-green-400', error: 'text-red-400', info: 'text-blue-400' };
+      document.getElementById('toast-icon').setAttribute('data-lucide', icons[type] || 'info');
+      document.getElementById('toast-icon').className = `w-5 h-5 flex-shrink-0 ${colors[type] || colors.info}`;
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast').style.display = '';
+      lucide.createIcons();
+      setTimeout(() => { document.getElementById('toast').style.display = 'none'; }, 3000);
+    };
+
+    // ESC cierra detalle
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarDetalle(); });
+    window.addEventListener('mvpo:unauthorized', () => updateNav());
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  </script>
+</body>
+</html>

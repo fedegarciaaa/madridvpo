@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — MadridVPO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    [x-cloak]{display:none}
+    .sidebar-link.active { background: rgba(99,102,241,.15); color:#a5b4fc; border-left:3px solid #6366f1; }
+    .sidebar-link { border-left: 3px solid transparent; }
+    .badge-vpo    { background:#1e3a5f; color:#60a5fa; }
+    .badge-vppl   { background:#1e4620; color:#4ade80; }
+    .badge-coop   { background:#3b1f5e; color:#c084fc; }
+    .badge-libre  { background:#3b2a1f; color:#fb923c; }
+    .estado-en_proyecto      { background:#1e3a4a; color:#67e8f9; }
+    .estado-en_construccion  { background:#1a3a2a; color:#86efac; }
+    .estado-lista_espera     { background:#3a2a1a; color:#fcd34d; }
+    .estado-sorteo           { background:#3a1a3a; color:#f0abfc; }
+    .estado-adjudicada       { background:#1a1a3a; color:#a5b4fc; }
+    .estado-entregada        { background:#1a2a1a; color:#bbf7d0; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex">
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col fixed h-full z-20" id="sidebar">
+  <div class="px-6 py-5 border-b border-gray-800">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <i data-lucide="building-2" class="w-4 h-4 text-white"></i>
+      </div>
+      <div>
+        <div class="font-bold text-white text-sm">MadridVPO</div>
+        <div class="text-xs text-gray-500">Panel de Admin</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+    <button onclick="mostrarSeccion('dashboard')" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+    </button>
+    <button onclick="mostrarSeccion('promociones')" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      <i data-lucide="home" class="w-4 h-4"></i> Promociones
+    </button>
+    <button onclick="mostrarSeccion('promotoras')" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      <i data-lucide="building" class="w-4 h-4"></i> Promotoras
+    </button>
+    <button onclick="mostrarSeccion('usuarios')" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      <i data-lucide="users" class="w-4 h-4"></i> Usuarios
+    </button>
+    <div class="pt-3 pb-1 px-3">
+      <div class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Sistema</div>
+    </div>
+    <button onclick="mostrarSeccion('scraping')" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      <i data-lucide="radar" class="w-4 h-4"></i> Scraping
+    </button>
+  </nav>
+
+  <div class="p-3 border-t border-gray-800">
+    <div class="flex items-center gap-3 px-3 py-2 mb-2">
+      <div class="w-7 h-7 bg-indigo-700 rounded-full flex items-center justify-center text-xs font-bold" id="adminAvatar">A</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-medium text-white truncate" id="adminEmail">admin</div>
+        <div class="text-xs text-indigo-400">Administrador</div>
+      </div>
+    </div>
+    <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors">
+      <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar sesión
+    </button>
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+
+  <!-- Topbar -->
+  <header class="bg-gray-900/80 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+    <h1 class="text-lg font-semibold text-white" id="pageTitle">Dashboard</h1>
+    <div class="flex items-center gap-3">
+      <a href="/" target="_blank" class="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Ver web
+      </a>
+    </div>
+  </header>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+    <div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium" id="toastContent"></div>
+  </div>
+
+  <!-- ── LOGIN SCREEN ─────────────────────────────────────── -->
+  <div id="loginScreen" class="flex-1 flex items-center justify-center p-6">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white">Acceso Admin</h2>
+        <p class="text-gray-500 text-sm mt-1">MadridVPO Panel de Control</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1.5">Email</label>
+          <input id="loginEmail" type="email" placeholder="admin@madridvpo.com"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1.5">Contraseña</label>
+          <input id="loginPass" type="password" placeholder="••••••••"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <p id="loginError" class="text-red-400 text-xs hidden"></p>
+        <button onclick="doLogin()" id="loginBtn"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-colors text-sm">
+          Iniciar sesión
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTENIDO ADMIN ─────────────────────────────────── -->
+  <div id="adminContent" class="flex-1 p-6 hidden">
+
+    <!-- DASHBOARD -->
+    <section id="sec-dashboard" class="hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-gray-500">Usuarios</span>
+            <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
+          </div>
+          <div class="text-3xl font-bold text-white" id="statUsuarios">—</div>
+          <div class="text-xs text-gray-600 mt-1" id="statUsuariosSub"></div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-gray-500">Promociones</span>
+            <i data-lucide="home" class="w-4 h-4 text-green-400"></i>
+          </div>
+          <div class="text-3xl font-bold text-white" id="statPromociones">—</div>
+          <div class="text-xs text-gray-600 mt-1" id="statPromocionesSub"></div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-gray-500">Alertas activas</span>
+            <i data-lucide="bell" class="w-4 h-4 text-yellow-400"></i>
+          </div>
+          <div class="text-3xl font-bold text-white" id="statAlertas">—</div>
+          <div class="text-xs text-gray-600 mt-1">Usuarios suscritos</div>
+        </div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 class="font-semibold text-white mb-4">Accesos rápidos</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button onclick="mostrarSeccion('promociones'); abrirFormPromocion()"
+            class="flex flex-col items-center gap-2 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors text-sm text-gray-300">
+            <i data-lucide="plus-circle" class="w-6 h-6 text-indigo-400"></i>
+            Nueva promoción
+          </button>
+          <button onclick="mostrarSeccion('promotoras')"
+            class="flex flex-col items-center gap-2 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors text-sm text-gray-300">
+            <i data-lucide="building" class="w-6 h-6 text-purple-400"></i>
+            Ver promotoras
+          </button>
+          <button onclick="mostrarSeccion('usuarios')"
+            class="flex flex-col items-center gap-2 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors text-sm text-gray-300">
+            <i data-lucide="user-check" class="w-6 h-6 text-green-400"></i>
+            Gestionar usuarios
+          </button>
+          <button onclick="mostrarSeccion('scraping')"
+            class="flex flex-col items-center gap-2 p-4 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors text-sm text-gray-300">
+            <i data-lucide="radar" class="w-6 h-6 text-cyan-400"></i>
+            Panel scraping
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROMOCIONES -->
+    <section id="sec-promociones" class="hidden">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <select id="filtroPublicada" onchange="cargarPromociones()" class="bg-gray-800 border border-gray-700 text-sm text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+            <option value="">Todas</option>
+            <option value="true">Publicadas</option>
+            <option value="false">Borradores</option>
+          </select>
+          <select id="filtroZona" onchange="cargarPromociones()" class="bg-gray-800 border border-gray-700 text-sm text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+            <option value="">Todas las zonas</option>
+            <option value="Berrocales">Berrocales</option>
+            <option value="Valdecarros">Valdecarros</option>
+            <option value="Ahijones">Ahijones</option>
+            <option value="Los Cerros">Los Cerros</option>
+            <option value="El Cañaveral">El Cañaveral</option>
+            <option value="Valdebebas">Valdebebas</option>
+          </select>
+        </div>
+        <button onclick="abrirFormPromocion()"
+          class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nueva promoción
+        </button>
+      </div>
+
+      <!-- Tabla de promociones -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-800">
+              <th class="text-left px-5 py-3.5 text-gray-500 font-medium">Nombre</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden md:table-cell">Zona</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden lg:table-cell">Tipo</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden lg:table-cell">Estado</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden xl:table-cell">Precio desde</th>
+              <th class="text-center px-4 py-3.5 text-gray-500 font-medium">Publicada</th>
+              <th class="px-4 py-3.5"></th>
+            </tr>
+          </thead>
+          <tbody id="tablaPromociones" class="divide-y divide-gray-800/50">
+            <tr><td colspan="7" class="px-5 py-8 text-center text-gray-600">Cargando...</td></tr>
+          </tbody>
+        </table>
+        <div class="px-5 py-3 border-t border-gray-800 flex items-center justify-between">
+          <span class="text-xs text-gray-600" id="promocionesTotal"></span>
+          <div class="flex gap-2" id="promocionesPages"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROMOTORAS -->
+    <section id="sec-promotoras" class="hidden">
+      <div class="flex justify-end mb-5">
+        <button onclick="abrirFormPromotora()"
+          class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nueva promotora
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="gridPromotoras">
+        <div class="col-span-full text-center py-8 text-gray-600">Cargando...</div>
+      </div>
+    </section>
+
+    <!-- USUARIOS -->
+    <section id="sec-usuarios" class="hidden">
+      <div class="flex items-center gap-3 mb-5">
+        <input id="buscarUsuario" type="text" placeholder="Buscar por email o nombre..."
+          oninput="cargarUsuarios()" class="bg-gray-800 border border-gray-700 text-sm text-gray-300 rounded-lg px-3 py-2 w-64 focus:outline-none focus:border-indigo-500">
+        <select id="filtroPlan" onchange="cargarUsuarios()" class="bg-gray-800 border border-gray-700 text-sm text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+          <option value="">Todos los planes</option>
+          <option value="free">Free</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-800">
+              <th class="text-left px-5 py-3.5 text-gray-500 font-medium">Usuario</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden md:table-cell">Plan</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden lg:table-cell">Telegram</th>
+              <th class="text-left px-4 py-3.5 text-gray-500 font-medium hidden xl:table-cell">Registro</th>
+              <th class="text-center px-4 py-3.5 text-gray-500 font-medium">Activo</th>
+              <th class="px-4 py-3.5"></th>
+            </tr>
+          </thead>
+          <tbody id="tablaUsuarios" class="divide-y divide-gray-800/50">
+            <tr><td colspan="6" class="px-5 py-8 text-center text-gray-600">Cargando...</td></tr>
+          </tbody>
+        </table>
+        <div class="px-5 py-3 border-t border-gray-800">
+          <span class="text-xs text-gray-600" id="usuariosTotal"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCRAPING -->
+    <section id="sec-scraping" class="hidden space-y-6">
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="scrapingStats">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 animate-pulse"><div class="h-8 bg-gray-800 rounded mb-2 w-12"></div><div class="h-3 bg-gray-800 rounded w-16"></div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 animate-pulse"><div class="h-8 bg-gray-800 rounded mb-2 w-12"></div><div class="h-3 bg-gray-800 rounded w-16"></div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 animate-pulse"><div class="h-8 bg-gray-800 rounded mb-2 w-12"></div><div class="h-3 bg-gray-800 rounded w-16"></div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 animate-pulse"><div class="h-8 bg-gray-800 rounded mb-2 w-12"></div><div class="h-3 bg-gray-800 rounded w-16"></div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 animate-pulse"><div class="h-8 bg-gray-800 rounded mb-2 w-12"></div><div class="h-3 bg-gray-800 rounded w-16"></div></div>
+      </div>
+
+      <!-- Header + acciones -->
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-base font-semibold text-white">Jobs de Scraping</h2>
+          <p class="text-xs text-gray-500 mt-0.5" id="scrapingLastRefresh">—</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="cargarScraping()" class="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition-colors">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Recargar
+          </button>
+          <button onclick="forzarScrapingTodo()" id="btnForzarTodo" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+            <i data-lucide="play" class="w-4 h-4"></i> Forzar todo
+          </button>
+        </div>
+      </div>
+
+      <!-- Jobs table -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-800">
+              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Promotora</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">URL</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Último check</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell">Próximo</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Errores</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaScrapingJobs">
+            <tr><td colspan="7" class="px-5 py-8 text-center text-gray-600">Cargando jobs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cola de revisión -->
+      <div>
+        <div class="flex items-center gap-4 mb-4 flex-wrap">
+          <h2 class="text-base font-semibold text-white">Cola de revisión</h2>
+          <div class="flex gap-1">
+            <button onclick="cargarCola('pending')" id="tabColaPending" class="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 text-white font-medium">
+              Pendientes <span id="badgePending"></span>
+            </button>
+            <button onclick="cargarCola('aprobado')" id="tabColaAprobado" class="px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors">Aprobados</button>
+            <button onclick="cargarCola('rechazado')" id="tabColaRechazado" class="px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors">Rechazados</button>
+          </div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-800">
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo cambio</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Promoción</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Promotora</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Detectado</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider" id="thColaAcciones">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaScrapingCola">
+              <tr><td colspan="5" class="px-5 py-8 text-center text-gray-600">Cargando cola...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </div><!-- /adminContent -->
+</main>
+
+<!-- ═══════════════════ MODAL PROMOCIÓN ═══════════════════ -->
+<div id="modalPromocion" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-start justify-center p-4 overflow-y-auto">
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-3xl my-4">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+      <h3 class="font-semibold text-white" id="modalPromocionTitulo">Nueva promoción</h3>
+      <button onclick="cerrarModal('modalPromocion')" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="p-6 space-y-5">
+
+      <!-- Fila 1 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1.5">Nombre de la promoción *</label>
+          <input id="fNombre" type="text" placeholder="Ej: Residencial Pegasus"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Promotora</label>
+          <select id="fPromotora" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-indigo-500">
+            <option value="">Sin promotora</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Tipo</label>
+          <select id="fTipo" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-indigo-500">
+            <option value="VPPL">VPPL</option>
+            <option value="VPO">VPO</option>
+            <option value="cooperativa">Cooperativa</option>
+            <option value="libre">Libre</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fila 2: ubicación -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Zona</label>
+          <select id="fZona" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-indigo-500">
+            <option value="">Seleccionar...</option>
+            <option>Berrocales</option>
+            <option>Valdecarros</option>
+            <option>Ahijones</option>
+            <option>Los Cerros</option>
+            <option>El Cañaveral</option>
+            <option>Valdebebas</option>
+            <option>Centro</option>
+            <option>Otra</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Latitud</label>
+          <input id="fLat" type="number" step="0.0000001" placeholder="40.4168"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Longitud</label>
+          <input id="fLng" type="number" step="0.0000001" placeholder="-3.7038"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-xs text-gray-500 mb-1.5">Dirección</label>
+          <input id="fDireccion" type="text" placeholder="Calle, número, distrito..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <!-- Fila 3: precios y superficies -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Precio desde (€)</label>
+          <input id="fPrecioDesde" type="number" placeholder="180000"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Precio hasta (€)</label>
+          <input id="fPrecioHasta" type="number" placeholder="250000"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">m² desde</label>
+          <input id="fM2Desde" type="number" placeholder="65"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">m² hasta</label>
+          <input id="fM2Hasta" type="number" placeholder="90"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Dorms. mín</label>
+          <input id="fDormsMin" type="number" min="0" max="6" placeholder="2"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Dorms. máx</label>
+          <input id="fDormsMax" type="number" min="0" max="6" placeholder="4"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Estado</label>
+          <select id="fEstado" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-indigo-500">
+            <option value="en_proyecto">En proyecto</option>
+            <option value="en_construccion">En construcción</option>
+            <option value="lista_espera">Lista de espera</option>
+            <option value="sorteo">Sorteo</option>
+            <option value="adjudicada">Adjudicada</option>
+            <option value="entregada">Entregada</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Entrega estimada</label>
+          <input id="fFechaEntrega" type="date"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <!-- Extras -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="fGaraje" type="checkbox" class="w-4 h-4 rounded accent-indigo-600">
+          <span class="text-sm text-gray-300">Garaje incl.</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="fTrastero" type="checkbox" class="w-4 h-4 rounded accent-indigo-600">
+          <span class="text-sm text-gray-300">Trastero incl.</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="fAscensor" type="checkbox" class="w-4 h-4 rounded accent-indigo-600">
+          <span class="text-sm text-gray-300">Ascensor</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="fDestacada" type="checkbox" class="w-4 h-4 rounded accent-indigo-600">
+          <span class="text-sm text-gray-300">Destacada</span>
+        </label>
+      </div>
+
+      <!-- Descripción -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Descripción corta</label>
+          <input id="fDescCorta" type="text" placeholder="Resumen breve para listados..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Web oficial</label>
+          <input id="fWebOficial" type="url" placeholder="https://..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1.5">Descripción completa</label>
+          <textarea id="fDesc" rows="4" placeholder="Descripción detallada de la promoción..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1.5">URL imagen principal</label>
+          <input id="fImagen" type="url" placeholder="https://..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <p id="formPromocionError" class="text-red-400 text-xs hidden"></p>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-800">
+      <button onclick="cerrarModal('modalPromocion')" class="text-sm text-gray-500 hover:text-white">Cancelar</button>
+      <div class="flex gap-3">
+        <button onclick="guardarPromocion(false)" id="btnGuardarBorrador"
+          class="text-sm px-4 py-2 border border-gray-700 hover:border-gray-500 text-gray-300 rounded-xl transition-colors">
+          Guardar borrador
+        </button>
+        <button onclick="guardarPromocion(true)" id="btnGuardarPublicar"
+          class="text-sm px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors">
+          Guardar y publicar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAL PROMOTORA ═══════════════════ -->
+<div id="modalPromotora" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+      <h3 class="font-semibold text-white" id="modalPromotoraTitulo">Nueva promotora</h3>
+      <button onclick="cerrarModal('modalPromotora')" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Nombre *</label>
+        <input id="pNombre" type="text" placeholder="Ej: Grupo Ibosa"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Web</label>
+        <input id="pWeb" type="url" placeholder="https://..."
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Descripción</label>
+        <textarea id="pDesc" rows="3"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">URL formulario de interés</label>
+          <input id="pFormUrl" type="url" placeholder="https://..."
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Tipo de formulario</label>
+          <select id="pFormTipo" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-indigo-500">
+            <option value="html">HTML estándar</option>
+            <option value="puppeteer">Puppeteer (JS)</option>
+            <option value="sharepoint">SharePoint</option>
+          </select>
+        </div>
+      </div>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input id="pScrapingActivo" type="checkbox" class="w-4 h-4 rounded accent-indigo-600" checked>
+        <span class="text-sm text-gray-300">Scraping activo</span>
+      </label>
+      <p id="formPromotoraError" class="text-red-400 text-xs hidden"></p>
+    </div>
+    <div class="flex justify-between px-6 py-4 border-t border-gray-800">
+      <button onclick="cerrarModal('modalPromotora')" class="text-sm text-gray-500 hover:text-white">Cancelar</button>
+      <button onclick="guardarPromotora()" class="text-sm px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ JS ═══════════════════ -->
+<script>
+// ── Estado global ──────────────────────────────────────────
+const state = {
+  token: localStorage.getItem('mvpo_token'),
+  usuario: null,
+  seccion: 'dashboard',
+  editandoPromocionId: null,
+  editandoPromotoraId: null,
+  promotoras: [],
+  paginaPromociones: 1
+};
+
+// ── API helper ─────────────────────────────────────────────
+async function api(method, path, body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
+  if (body) opts.body = JSON.stringify(body);
+
+  let res = await fetch('/api' + path, opts);
+
+  // Intentar refresh automático si 401
+  if (res.status === 401 && path !== '/auth/login') {
+    try {
+      const ref = await fetch('/api/auth/refresh', { method: 'POST' });
+      const rd  = await ref.json();
+      if (rd.success) {
+        state.token = rd.data.accessToken;
+        localStorage.setItem('mvpo_token', state.token);
+        opts.headers['Authorization'] = 'Bearer ' + state.token;
+        res = await fetch('/api' + path, opts);
+      } else {
+        cerrarSesionLocal();
+        return null;
+      }
+    } catch { cerrarSesionLocal(); return null; }
+  }
+
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'Error desconocido');
+  return data.data;
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function toast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast');
+  const ct = document.getElementById('toastContent');
+  const styles = {
+    ok:   { cls: 'bg-green-900 text-green-300 border border-green-800',   icon: 'M5 13l4 4L19 7' },
+    err:  { cls: 'bg-red-900 text-red-300 border border-red-800',         icon: 'M6 18L18 6M6 6l12 12' },
+    warn: { cls: 'bg-yellow-900 text-yellow-300 border border-yellow-800', icon: 'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' },
+    info: { cls: 'bg-indigo-900 text-indigo-300 border border-indigo-800', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  };
+  const s = styles[tipo] || styles.ok;
+  ct.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium ${s.cls}`;
+  ct.innerHTML = `<svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="${s.icon}"/></svg>${msg}`;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+// ── Auth ───────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+
+  errEl.classList.add('hidden');
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+
+  try {
+    const data = await api('POST', '/auth/login', { email, password: pass });
+    if (data?.usuario?.rol !== 'admin') {
+      errEl.textContent = 'Solo los administradores pueden acceder a este panel.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    state.token   = data.accessToken;
+    state.usuario = data.usuario;
+    localStorage.setItem('mvpo_token', data.accessToken);
+    mostrarPanel();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.textContent = 'Iniciar sesión';
+    btn.disabled = false;
+  }
+}
+
+function cerrarSesionLocal() {
+  state.token = null;
+  state.usuario = null;
+  localStorage.removeItem('mvpo_token');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('adminContent').classList.add('hidden');
+}
+
+async function logout() {
+  try { await api('POST', '/auth/logout'); } catch {}
+  cerrarSesionLocal();
+}
+
+function mostrarPanel() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('adminContent').classList.remove('hidden');
+  document.getElementById('adminEmail').textContent = state.usuario?.email || '';
+  document.getElementById('adminAvatar').textContent = (state.usuario?.email?.[0] || 'A').toUpperCase();
+  mostrarSeccion('dashboard');
+}
+
+// ── Secciones ──────────────────────────────────────────────
+function mostrarSeccion(nombre) {
+  state.seccion = nombre;
+  document.querySelectorAll('[id^="sec-"]').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('active'));
+
+  const sec = document.getElementById('sec-' + nombre);
+  if (sec) sec.classList.remove('hidden');
+
+  // Activar el botón correcto del sidebar
+  document.querySelectorAll('.sidebar-link').forEach(b => {
+    if (b.textContent.toLowerCase().includes(nombre === 'dashboard' ? 'dashboard'
+      : nombre === 'promociones' ? 'promoci' : nombre === 'promotoras' ? 'promotora'
+      : nombre === 'usuarios' ? 'usuario' : 'scraping')) {
+      b.classList.add('active');
+    }
+  });
+
+  const titles = { dashboard: 'Dashboard', promociones: 'Gestión de Promociones',
+    promotoras: 'Gestión de Promotoras', usuarios: 'Gestión de Usuarios', scraping: 'Panel de Scraping' };
+  document.getElementById('pageTitle').textContent = titles[nombre] || nombre;
+
+  // Parar auto-refresh de scraping al salir de esa sección
+  if (nombre !== 'scraping' && typeof scrapingAutoRefresh !== 'undefined') {
+    clearInterval(scrapingAutoRefresh);
+    scrapingAutoRefresh = null;
+  }
+
+  // Cargar datos de la sección
+  if (nombre === 'dashboard')   cargarDashboard();
+  if (nombre === 'promociones') cargarPromociones();
+  if (nombre === 'promotoras')  cargarPromotoras();
+  if (nombre === 'usuarios')    cargarUsuarios();
+  if (nombre === 'scraping')    cargarScraping();
+
+  lucide.createIcons();
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────
+async function cargarDashboard() {
+  try {
+    const s = await api('GET', '/admin/stats');
+    document.getElementById('statUsuarios').textContent = s.usuarios?.total || 0;
+    document.getElementById('statUsuariosSub').textContent = `${s.usuarios?.premium || 0} premium · ${s.usuarios?.nuevos_semana || 0} nuevos esta semana`;
+    document.getElementById('statPromociones').textContent = s.promociones?.total || 0;
+    document.getElementById('statPromocionesSub').textContent = `${s.promociones?.publicadas || 0} publicadas`;
+    document.getElementById('statAlertas').textContent = s.alertas?.total || 0;
+  } catch (e) { console.error(e); }
+}
+
+// ── PROMOCIONES ────────────────────────────────────────────
+async function cargarPromociones() {
+  const tbody = document.getElementById('tablaPromociones');
+  tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-6 text-center text-gray-600">Cargando...</td></tr>';
+
+  try {
+    const zona      = document.getElementById('filtroZona').value;
+    const publicada = document.getElementById('filtroPublicada').value;
+    const data = await api('GET', `/admin/promociones?pagina=${state.paginaPromociones}&limite=20${zona ? '&zona='+zona : ''}${publicada !== '' ? '&publicada='+publicada : ''}`);
+
+    if (!data?.promociones?.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-gray-600">No hay promociones. <button onclick="abrirFormPromocion()" class="text-indigo-400 hover:text-indigo-300">Crear la primera</button></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.promociones.map(p => `
+      <tr class="hover:bg-gray-800/30 transition-colors">
+        <td class="px-5 py-3.5">
+          <div class="font-medium text-white text-sm">${p.nombre}</div>
+          <div class="text-xs text-gray-600 mt-0.5">${p.promotora_nombre || '—'}</div>
+        </td>
+        <td class="px-4 py-3.5 hidden md:table-cell text-sm text-gray-400">${p.zona || '—'}</td>
+        <td class="px-4 py-3.5 hidden lg:table-cell">
+          <span class="text-xs px-2 py-1 rounded-md font-medium badge-${p.tipo?.toLowerCase()}">${p.tipo || '—'}</span>
+        </td>
+        <td class="px-4 py-3.5 hidden lg:table-cell">
+          <span class="text-xs px-2 py-1 rounded-md font-medium estado-${p.estado}">${estadoLabel(p.estado)}</span>
+        </td>
+        <td class="px-4 py-3.5 hidden xl:table-cell text-sm text-gray-400">
+          ${p.precio_desde ? '€' + p.precio_desde.toLocaleString('es-ES') : '—'}
+        </td>
+        <td class="px-4 py-3.5 text-center">
+          <span class="inline-block w-2 h-2 rounded-full ${p.publicada ? 'bg-green-400' : 'bg-gray-600'}"></span>
+        </td>
+        <td class="px-4 py-3.5">
+          <div class="flex items-center justify-end gap-1">
+            <button onclick="editarPromocion(${p.id})" title="Editar"
+              class="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            ${p.publicada
+              ? `<button onclick="despublicarPromocion(${p.id})" title="Despublicar"
+                   class="p-1.5 text-green-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                   <i data-lucide="eye-off" class="w-4 h-4"></i></button>`
+              : `<button onclick="publicarPromocion(${p.id})" title="Publicar"
+                   class="p-1.5 text-indigo-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                   <i data-lucide="send" class="w-4 h-4"></i></button>`
+            }
+            <button onclick="eliminarPromocion(${p.id}, '${p.nombre.replace(/'/g,"\\'")}' )" title="Eliminar"
+              class="p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('promocionesTotal').textContent =
+      `${data.total} promoción${data.total !== 1 ? 'es' : ''}`;
+
+    lucide.createIcons();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function estadoLabel(e) {
+  return { en_proyecto:'En proyecto', en_construccion:'En obra', lista_espera:'Lista espera',
+           sorteo:'Sorteo', adjudicada:'Adjudicada', entregada:'Entregada' }[e] || e;
+}
+
+async function publicarPromocion(id) {
+  try {
+    await api('POST', `/admin/promociones/${id}/publicar`);
+    toast('Promoción publicada correctamente');
+    cargarPromociones();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function despublicarPromocion(id) {
+  try {
+    await api('POST', `/admin/promociones/${id}/despublicar`);
+    toast('Promoción despublicada');
+    cargarPromociones();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function eliminarPromocion(id, nombre) {
+  if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    await api('DELETE', `/admin/promociones/${id}`);
+    toast('Promoción eliminada');
+    cargarPromociones();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── FORMULARIO PROMOCIÓN ───────────────────────────────────
+function abrirFormPromocion() {
+  state.editandoPromocionId = null;
+  document.getElementById('modalPromocionTitulo').textContent = 'Nueva promoción';
+  document.getElementById('formPromocionError').classList.add('hidden');
+  limpiarFormPromocion();
+  document.getElementById('modalPromocion').classList.remove('hidden');
+  cargarPromotorasEnSelect();
+}
+
+async function editarPromocion(id) {
+  try {
+    const p = await api('GET', `/admin/promociones/${id}`);
+    state.editandoPromocionId = id;
+    document.getElementById('modalPromocionTitulo').textContent = 'Editar promoción';
+    document.getElementById('formPromocionError').classList.add('hidden');
+
+    document.getElementById('fNombre').value     = p.nombre || '';
+    document.getElementById('fTipo').value       = p.tipo   || 'VPPL';
+    document.getElementById('fZona').value       = p.zona   || '';
+    document.getElementById('fLat').value        = p.lat    || '';
+    document.getElementById('fLng').value        = p.lng    || '';
+    document.getElementById('fDireccion').value  = p.direccion || '';
+    document.getElementById('fPrecioDesde').value= p.precio_desde || '';
+    document.getElementById('fPrecioHasta').value= p.precio_hasta || '';
+    document.getElementById('fM2Desde').value    = p.m2_desde || '';
+    document.getElementById('fM2Hasta').value    = p.m2_hasta || '';
+    document.getElementById('fDormsMin').value   = p.dormitorios_min || '';
+    document.getElementById('fDormsMax').value   = p.dormitorios_max || '';
+    document.getElementById('fEstado').value     = p.estado || 'en_proyecto';
+    document.getElementById('fFechaEntrega').value = p.fecha_entrega_est?.split('T')[0] || '';
+    document.getElementById('fDesc').value       = p.descripcion || '';
+    document.getElementById('fDescCorta').value  = p.descripcion_corta || '';
+    document.getElementById('fWebOficial').value = p.web_oficial || '';
+    document.getElementById('fImagen').value     = p.imagen_principal || '';
+    document.getElementById('fGaraje').checked   = !!p.garaje_incluido;
+    document.getElementById('fTrastero').checked = !!p.trastero_incluido;
+    document.getElementById('fAscensor').checked = !!p.ascensor;
+    document.getElementById('fDestacada').checked= !!p.destacada;
+
+    await cargarPromotorasEnSelect();
+    document.getElementById('fPromotora').value = p.promotora_id || '';
+
+    document.getElementById('modalPromocion').classList.remove('hidden');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function cargarPromotorasEnSelect() {
+  if (!state.promotoras.length) {
+    state.promotoras = await api('GET', '/admin/promotoras') || [];
+  }
+  const sel = document.getElementById('fPromotora');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Sin promotora</option>' +
+    state.promotoras.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  if (val) sel.value = val;
+}
+
+async function guardarPromocion(publicarAhora) {
+  const errEl = document.getElementById('formPromocionError');
+  errEl.classList.add('hidden');
+
+  const nombre = document.getElementById('fNombre').value.trim();
+  if (!nombre) {
+    errEl.textContent = 'El nombre es obligatorio';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const datos = {
+    nombre,
+    promotora_id: document.getElementById('fPromotora').value || null,
+    tipo:          document.getElementById('fTipo').value,
+    zona:          document.getElementById('fZona').value,
+    lat:           parseFloat(document.getElementById('fLat').value) || null,
+    lng:           parseFloat(document.getElementById('fLng').value) || null,
+    direccion:     document.getElementById('fDireccion').value || null,
+    precio_desde:  parseInt(document.getElementById('fPrecioDesde').value) || null,
+    precio_hasta:  parseInt(document.getElementById('fPrecioHasta').value) || null,
+    m2_desde:      parseInt(document.getElementById('fM2Desde').value) || null,
+    m2_hasta:      parseInt(document.getElementById('fM2Hasta').value) || null,
+    dormitorios_min: parseInt(document.getElementById('fDormsMin').value) || null,
+    dormitorios_max: parseInt(document.getElementById('fDormsMax').value) || null,
+    estado:        document.getElementById('fEstado').value,
+    fecha_entrega_est: document.getElementById('fFechaEntrega').value || null,
+    descripcion:   document.getElementById('fDesc').value || null,
+    descripcion_corta: document.getElementById('fDescCorta').value || null,
+    web_oficial:   document.getElementById('fWebOficial').value || null,
+    imagen_principal: document.getElementById('fImagen').value || null,
+    garaje_incluido:  document.getElementById('fGaraje').checked,
+    trastero_incluido: document.getElementById('fTrastero').checked,
+    ascensor:      document.getElementById('fAscensor').checked,
+    destacada:     document.getElementById('fDestacada').checked
+  };
+
+  try {
+    let promo;
+    if (state.editandoPromocionId) {
+      promo = await api('PUT', `/admin/promociones/${state.editandoPromocionId}`, datos);
+    } else {
+      promo = await api('POST', '/admin/promociones', datos);
+    }
+
+    if (publicarAhora && promo?.id) {
+      await api('POST', `/admin/promociones/${promo.id}/publicar`);
+      toast('Promoción guardada y publicada ✓');
+    } else {
+      toast('Promoción guardada como borrador');
+    }
+
+    cerrarModal('modalPromocion');
+    cargarPromociones();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+function limpiarFormPromocion() {
+  ['fNombre','fLat','fLng','fDireccion','fPrecioDesde','fPrecioHasta','fM2Desde',
+   'fM2Hasta','fDormsMin','fDormsMax','fFechaEntrega','fDesc','fDescCorta',
+   'fWebOficial','fImagen'].forEach(id => document.getElementById(id).value = '');
+  ['fGaraje','fTrastero','fAscensor','fDestacada'].forEach(id => document.getElementById(id).checked = false);
+  document.getElementById('fTipo').value  = 'VPPL';
+  document.getElementById('fZona').value  = '';
+  document.getElementById('fEstado').value= 'en_proyecto';
+}
+
+// ── PROMOTORAS ─────────────────────────────────────────────
+async function cargarPromotoras() {
+  const grid = document.getElementById('gridPromotoras');
+  grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-600">Cargando...</div>';
+  try {
+    const data = await api('GET', '/admin/promotoras');
+    state.promotoras = data || [];
+
+    if (!data?.length) {
+      grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-600">No hay promotoras registradas.</div>';
+      return;
+    }
+
+    grid.innerHTML = data.map(p => `
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <div class="font-semibold text-white text-sm">${p.nombre}</div>
+            ${p.web ? `<a href="${p.web}" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300">${p.web.replace('https://','')}</a>` : ''}
+          </div>
+          <div class="flex gap-1">
+            <button onclick="editarPromotora(${p.id})" class="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mb-3 line-clamp-2">${p.descripcion || 'Sin descripción'}</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs px-2 py-1 rounded-md ${p.scraping_activo ? 'bg-green-900/50 text-green-400' : 'bg-gray-800 text-gray-500'}">
+            ${p.scraping_activo ? '● Scraping activo' : '○ Scraping inactivo'}
+          </span>
+          <span class="text-xs px-2 py-1 rounded-md bg-gray-800 text-gray-500">
+            ${p.total_promociones || 0} promociones
+          </span>
+        </div>
+      </div>`).join('');
+    lucide.createIcons();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function abrirFormPromotora() {
+  state.editandoPromotoraId = null;
+  document.getElementById('modalPromotoraTitulo').textContent = 'Nueva promotora';
+  document.getElementById('formPromotoraError').classList.add('hidden');
+  ['pNombre','pWeb','pDesc','pFormUrl'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pFormTipo').value = 'html';
+  document.getElementById('pScrapingActivo').checked = true;
+  document.getElementById('modalPromotora').classList.remove('hidden');
+}
+
+async function editarPromotora(id) {
+  try {
+    const all = await api('GET', '/admin/promotoras');
+    const p = all.find(x => x.id === id);
+    if (!p) return;
+    state.editandoPromotoraId = id;
+    document.getElementById('modalPromotoraTitulo').textContent = 'Editar promotora';
+    document.getElementById('pNombre').value  = p.nombre || '';
+    document.getElementById('pWeb').value     = p.web || '';
+    document.getElementById('pDesc').value    = p.descripcion || '';
+    document.getElementById('pFormUrl').value = p.form_url || '';
+    document.getElementById('pFormTipo').value= p.form_tipo || 'html';
+    document.getElementById('pScrapingActivo').checked = !!p.scraping_activo;
+    document.getElementById('modalPromotora').classList.remove('hidden');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function guardarPromotora() {
+  const errEl = document.getElementById('formPromotoraError');
+  errEl.classList.add('hidden');
+  const nombre = document.getElementById('pNombre').value.trim();
+  if (!nombre) { errEl.textContent = 'El nombre es obligatorio'; errEl.classList.remove('hidden'); return; }
+
+  const datos = {
+    nombre,
+    web:            document.getElementById('pWeb').value || null,
+    descripcion:    document.getElementById('pDesc').value || null,
+    form_url:       document.getElementById('pFormUrl').value || null,
+    form_tipo:      document.getElementById('pFormTipo').value,
+    scraping_activo: document.getElementById('pScrapingActivo').checked
+  };
+
+  try {
+    if (state.editandoPromotoraId) {
+      await api('PUT', `/admin/promotoras/${state.editandoPromotoraId}`, datos);
+      toast('Promotora actualizada');
+    } else {
+      await api('POST', '/admin/promotoras', datos);
+      toast('Promotora creada');
+    }
+    state.promotoras = [];
+    cerrarModal('modalPromotora');
+    cargarPromotoras();
+  } catch (e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+}
+
+// ── USUARIOS ───────────────────────────────────────────────
+async function cargarUsuarios() {
+  const tbody = document.getElementById('tablaUsuarios');
+  tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-6 text-center text-gray-600">Cargando...</td></tr>';
+  try {
+    const buscar = document.getElementById('buscarUsuario').value;
+    const plan   = document.getElementById('filtroPlanu') ? document.getElementById('filtroPlanu').value : document.getElementById('filtroPlanu')?.value || document.getElementById('filtroPlanu')?.value || '';
+    const planEl = document.getElementById('filtroPlanu') || document.getElementById('filtroPlanu') || null;
+    const planV  = document.querySelector('#filtroPlanu')?.value || document.querySelector('#filtroPlanu')?.value || '';
+    const filtPlan = document.getElementById('filtroPlanu')?.value || '';
+    // Simple fix: get plan filter
+    const planVal = (document.querySelectorAll('select')[2])?.value || '';
+
+    const data = await api('GET', `/admin/usuarios?${buscar ? 'buscar='+encodeURIComponent(buscar) : ''}${planVal ? '&plan='+planVal : ''}`);
+
+    if (!data?.usuarios?.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-600">No se encontraron usuarios</td></tr>';
+      document.getElementById('usuariosTotal').textContent = '';
+      return;
+    }
+
+    tbody.innerHTML = data.usuarios.map(u => `
+      <tr class="hover:bg-gray-800/30 transition-colors">
+        <td class="px-5 py-3.5">
+          <div class="font-medium text-white text-sm">${u.nombre || '—'}</div>
+          <div class="text-xs text-gray-500">${u.email}</div>
+        </td>
+        <td class="px-4 py-3.5 hidden md:table-cell">
+          <span class="text-xs px-2 py-1 rounded-md font-medium ${u.plan === 'premium' ? 'bg-yellow-900/40 text-yellow-400' : 'bg-gray-800 text-gray-500'}">
+            ${u.plan}
+          </span>
+        </td>
+        <td class="px-4 py-3.5 hidden lg:table-cell text-xs text-gray-500">
+          ${u.telegram_chat_id ? '<span class="text-blue-400">✓ Vinculado</span>' : '—'}
+        </td>
+        <td class="px-4 py-3.5 hidden xl:table-cell text-xs text-gray-500">
+          ${u.created_at ? new Date(u.created_at).toLocaleDateString('es-ES') : '—'}
+        </td>
+        <td class="px-4 py-3.5 text-center">
+          <span class="inline-block w-2 h-2 rounded-full ${u.activo ? 'bg-green-400' : 'bg-red-500'}"></span>
+        </td>
+        <td class="px-4 py-3.5">
+          <div class="flex items-center justify-end gap-1">
+            <button onclick="cambiarPlan(${u.id}, '${u.plan}')" title="${u.plan === 'premium' ? 'Cambiar a free' : 'Cambiar a premium'}"
+              class="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-gray-700 rounded-lg transition-colors text-xs px-2">
+              ${u.plan === 'premium' ? 'Free' : 'Premium'}
+            </button>
+            <button onclick="toggleActivo(${u.id}, ${u.activo})" title="${u.activo ? 'Desactivar' : 'Activar'}"
+              class="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+              <i data-lucide="${u.activo ? 'user-x' : 'user-check'}" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('usuariosTotal').textContent = `${data.total} usuario${data.total !== 1 ? 's' : ''}`;
+    lucide.createIcons();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function cambiarPlan(id, planActual) {
+  const nuevoPlan = planActual === 'premium' ? 'free' : 'premium';
+  if (!confirm(`¿Cambiar usuario a plan ${nuevoPlan}?`)) return;
+  try {
+    await api('PUT', `/admin/usuarios/${id}/plan`, { plan: nuevoPlan });
+    toast(`Usuario cambiado a ${nuevoPlan}`);
+    cargarUsuarios();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function toggleActivo(id, activo) {
+  if (!confirm(`¿${activo ? 'Desactivar' : 'Activar'} este usuario?`)) return;
+  try {
+    await api('PUT', `/admin/usuarios/${id}/activar`, { activo: !activo });
+    toast(`Usuario ${!activo ? 'activado' : 'desactivado'}`);
+    cargarUsuarios();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Modales ────────────────────────────────────────────────
+function cerrarModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// Cerrar modal al hacer clic fuera
+['modalPromocion','modalPromotora'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === document.getElementById(id)) cerrarModal(id);
+  });
+});
+
+// ── SCRAPING ───────────────────────────────────────────────
+let scrapingAutoRefresh = null;
+let colaEstadoActual    = 'pending';
+let scrapingForzando    = false; // true mientras haya un run forzado en progreso
+
+function scrapingEstadoBadge(job) {
+  if (!job.activo) return '<span class="text-xs font-medium text-yellow-500">⏸ Pausado</span>';
+  const map = {
+    running: '<span class="flex items-center gap-1.5 text-xs font-medium text-yellow-400"><span class="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>Ejecutando</span>',
+    ok:      '<span class="text-xs font-medium text-green-400">✓ OK</span>',
+    error:   '<span class="text-xs font-medium text-red-400">✗ Error</span>',
+    pending: '<span class="text-xs font-medium text-gray-400">Pendiente</span>',
+  };
+  return map[job.estado] || `<span class="text-xs text-gray-500">${job.estado}</span>`;
+}
+
+function tipoCambioLabel(tipo) {
+  return { nueva_promocion: '🟢 Nueva VPO', cambio_precio: '💰 Precio',
+    nueva_lista_espera: '📋 Lista espera', sorteo: '🎲 Sorteo',
+    cambio_estado: '🔄 Estado' }[tipo] || tipo;
+}
+
+function fmtFecha(f) {
+  if (!f) return '—';
+  return new Date(f).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+async function cargarScraping() {
+  try {
+    const [stats, jobs] = await Promise.all([
+      api('GET', '/admin/scraping/stats'),
+      api('GET', '/admin/scraping/jobs'),
+    ]);
+
+    // Stats cards
+    const j = stats.jobs || {}, c = stats.cola || {};
+
+    // corriendo = jobs en estado 'running' en BD  O  flag en memoria del servidor
+    // El flag en memoria se activa antes de que la BD se actualice → evita race condition
+    const corriendo = parseInt(j.corriendo) > 0 || !!j.corriendo_servicio;
+    console.log(`[Scraping] Poll: corriendo_db=${j.corriendo}, corriendo_srv=${j.corriendo_servicio}, scrapingForzando=${scrapingForzando}`);
+
+    document.getElementById('scrapingStats').innerHTML = `
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-2xl font-bold text-white">${j.total || 0}</div>
+        <div class="text-xs text-gray-500 mt-1">Total jobs</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-2xl font-bold text-green-400">${j.ok || 0}</div>
+        <div class="text-xs text-gray-500 mt-1">OK</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-2xl font-bold text-yellow-400">${j.corriendo || 0}</div>
+        <div class="text-xs text-gray-500 mt-1">Ejecutando</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-2xl font-bold text-red-400">${j.con_error || 0}</div>
+        <div class="text-xs text-gray-500 mt-1">Con error</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="text-2xl font-bold text-indigo-400">${c.pendientes || 0}</div>
+        <div class="text-xs text-gray-500 mt-1">En cola</div>
+      </div>`;
+
+    // Jobs table (corriendo ya definido arriba con corriendo_servicio)
+    document.getElementById('tablaScrapingJobs').innerHTML = jobs?.length
+      ? jobs.map(job => `
+        <tr class="hover:bg-gray-800/30 transition-colors border-b border-gray-800/50 last:border-0">
+          <td class="px-5 py-3.5">
+            <div class="font-medium text-white text-sm">${job.promotora_nombre || '—'}</div>
+            <div class="text-xs text-gray-600 mt-0.5">${job.tipo_scraper || ''}</div>
+          </td>
+          <td class="px-4 py-3.5 hidden lg:table-cell">
+            ${job.url ? `<a href="${job.url}" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300">${new URL(job.url).hostname}</a>` : '—'}
+          </td>
+          <td class="px-4 py-3.5">
+            ${scrapingEstadoBadge(job)}
+            ${job.ultimo_error ? `<div class="text-xs text-red-400/70 mt-1 max-w-xs truncate" title="${job.ultimo_error.replace(/"/g,'&quot;')}">${job.ultimo_error.slice(0,70)}${job.ultimo_error.length>70?'…':''}</div>` : ''}
+          </td>
+          <td class="px-4 py-3.5 hidden md:table-cell text-xs text-gray-500">${fmtFecha(job.ultimo_check)}</td>
+          <td class="px-4 py-3.5 hidden xl:table-cell text-xs text-gray-500">${job.proximo_check ? fmtFecha(job.proximo_check) : '<span class="text-green-400">Inmediato</span>'}</td>
+          <td class="px-4 py-3.5 text-center hidden md:table-cell">
+            ${job.consecutivos_error > 0
+              ? `<span class="text-xs font-bold text-red-400 bg-red-900/30 px-2 py-0.5 rounded">${job.consecutivos_error}</span>`
+              : '<span class="text-xs text-gray-700">0</span>'}
+          </td>
+          <td class="px-4 py-3.5">
+            <div class="flex items-center justify-end gap-1">
+              <button onclick="forzarJob(${job.id})" title="Ejecutar ahora"
+                class="p-1.5 text-gray-500 hover:text-indigo-400 hover:bg-gray-700 rounded-lg transition-colors ${job.estado === 'running' ? 'opacity-40 cursor-not-allowed' : ''}"
+                ${job.estado === 'running' ? 'disabled' : ''}>
+                <i data-lucide="play" class="w-4 h-4"></i>
+              </button>
+              <button onclick="toggleJob(${job.id}, ${job.activo})" title="${job.activo ? 'Pausar job' : 'Activar job'}"
+                class="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-gray-700 rounded-lg transition-colors">
+                <i data-lucide="${job.activo ? 'pause' : 'play-circle'}" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`).join('')
+      : '<tr><td colspan="7" class="px-5 py-8 text-center text-gray-600">No hay jobs configurados</td></tr>';
+
+    // Badge pendientes
+    const bp = document.getElementById('badgePending');
+    if (bp) bp.textContent = parseInt(c.pendientes) > 0 ? `(${c.pendientes})` : '';
+
+    document.getElementById('scrapingLastRefresh').textContent =
+      `Actualizado: ${new Date().toLocaleTimeString('es-ES')} ${corriendo ? '· ⚡ En ejecución' : ''}`;
+
+    await cargarCola(colaEstadoActual);
+
+    // Auto-refresh: cada 5s si hay jobs corriendo, cada 30s si no
+    clearInterval(scrapingAutoRefresh);
+    scrapingAutoRefresh = setInterval(cargarScraping, corriendo ? 5000 : 30000);
+
+    // Detectar fin de run forzado → re-habilitar botón y notificar
+    if (scrapingForzando && !corriendo) {
+      scrapingForzando = false;
+      const btn = document.getElementById('btnForzarTodo');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> Forzar todo';
+      }
+      toast('Scraping completado. Revisa la cola para aprobar los cambios.', 'ok');
+    }
+
+    lucide.createIcons();
+  } catch (e) {
+    console.error('Error cargando scraping:', e);
+    document.getElementById('scrapingLastRefresh').textContent = 'Error al cargar datos';
+  }
+}
+
+async function cargarCola(estado = 'pending') {
+  colaEstadoActual = estado;
+
+  // Actualizar estilos de tabs
+  ['pending', 'aprobado', 'rechazado'].forEach(e => {
+    const btn = document.getElementById('tabCola' + e.charAt(0).toUpperCase() + e.slice(1));
+    if (btn) btn.className = e === estado
+      ? 'px-3 py-1.5 text-xs rounded-lg bg-indigo-600 text-white font-medium'
+      : 'px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors';
+  });
+
+  const accTh = document.getElementById('thColaAcciones');
+  if (accTh) accTh.textContent = estado === 'pending' ? 'Acciones' : 'Estado';
+
+  const tbody = document.getElementById('tablaScrapingCola');
+  try {
+    const data = await api('GET', `/admin/scraping/queue?estado=${estado}&limit=50`);
+    if (!data?.items?.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-10 text-center text-gray-600">
+        ${estado === 'pending' ? 'No hay cambios pendientes de revisión.<br><span class="text-xs text-gray-700">Los cambios detectados por el scraper aparecerán aquí para aprobación.</span>' : 'Sin elementos'}
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.items.map(item => {
+      const datos = item.datos_scrapeados || {};
+      return `
+      <tr class="hover:bg-gray-800/30 transition-colors border-b border-gray-800/50 last:border-0">
+        <td class="px-5 py-3.5">
+          <span class="text-sm">${tipoCambioLabel(item.tipo_cambio)}</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <div class="font-medium text-white text-sm">${datos.nombre || item.promocion_nombre_actual || '—'}</div>
+          ${datos.zona || datos.tipo ? `<div class="text-xs text-gray-500 mt-0.5">${[datos.zona, datos.tipo].filter(Boolean).join(' · ')}</div>` : ''}
+          ${datos.precio_desde ? `<div class="text-xs text-indigo-400 mt-0.5">desde €${parseInt(datos.precio_desde).toLocaleString('es-ES')}</div>` : ''}
+        </td>
+        <td class="px-4 py-3.5 hidden md:table-cell text-xs text-gray-500">${item.promotora_nombre || '—'}</td>
+        <td class="px-4 py-3.5 hidden lg:table-cell text-xs text-gray-500">
+          ${item.created_at ? new Date(item.created_at).toLocaleDateString('es-ES') : '—'}
+        </td>
+        <td class="px-4 py-3.5">
+          ${estado === 'pending'
+            ? `<div class="flex items-center justify-end gap-1.5">
+                <button onclick="aprobarCola(${item.id})"
+                  class="px-3 py-1.5 text-xs font-medium bg-green-900/40 text-green-400 hover:bg-green-900/70 rounded-lg transition-colors">
+                  Aprobar
+                </button>
+                <button onclick="rechazarCola(${item.id})"
+                  class="px-3 py-1.5 text-xs font-medium bg-red-900/40 text-red-400 hover:bg-red-900/70 rounded-lg transition-colors">
+                  Rechazar
+                </button>
+              </div>`
+            : `<div class="text-right text-xs ${estado === 'aprobado' ? 'text-green-400' : 'text-red-400'}">
+                ${estado === 'aprobado' ? '✓ Aprobado' : '✗ Rechazado'}
+                ${item.revisado_por_nombre ? `<div class="text-gray-600 mt-0.5">por ${item.revisado_por_nombre}</div>` : ''}
+              </div>`
+          }
+        </td>
+      </tr>`;
+    }).join('');
+
+    lucide.createIcons();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-4 text-center text-red-400 text-sm">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function forzarScrapingTodo() {
+  if (!confirm('¿Forzar el scraping de todas las promotoras activas?\n\nEl scraping correrá en segundo plano (puede tardar varios minutos). El panel se actualizará automáticamente.')) return;
+  const btn = document.getElementById('btnForzarTodo');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Ejecutando...';
+  lucide.createIcons();
+  try {
+    const r = await api('POST', '/admin/scraping/run-all');
+
+    if (r?.ok === false || r?.razon) {
+      // El servicio reportó un bloqueo (ej: ya en ejecución)
+      toast(r?.razon || r?.error || 'No se pudo iniciar el scraping', 'warn');
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> Forzar todo';
+      lucide.createIcons();
+    } else {
+      // Fire-and-forget confirmado: el scraping corre en background
+      // El botón queda deshabilitado hasta que cargarScraping() detecte que terminó
+      scrapingForzando = true;
+      toast('Scraping iniciado en segundo plano. El panel se actualizará cada 5s.', 'info');
+      clearInterval(scrapingAutoRefresh);
+      scrapingAutoRefresh = setInterval(cargarScraping, 5000);
+      cargarScraping();
+    }
+  } catch (e) {
+    toast(e.message, 'err');
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> Forzar todo';
+    lucide.createIcons();
+  }
+}
+
+async function forzarJob(id) {
+  try {
+    await api('POST', `/admin/scraping/run/${id}`);
+    toast('Job iniciado en segundo plano. Actualizando cada 5s...', 'info');
+    clearInterval(scrapingAutoRefresh);
+    scrapingAutoRefresh = setInterval(cargarScraping, 5000);
+    cargarScraping();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function toggleJob(id, activo) {
+  try {
+    await api('PATCH', `/admin/scraping/jobs/${id}/toggle`);
+    toast(activo ? 'Job pausado' : 'Job activado');
+    cargarScraping();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function aprobarCola(id) {
+  try {
+    await api('POST', `/admin/scraping/queue/${id}/aprobar`);
+    toast('Cambio aprobado y aplicado ✓');
+    cargarScraping();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function rechazarCola(id) {
+  const notas = prompt('Motivo del rechazo (opcional):');
+  if (notas === null) return; // cancelado
+  try {
+    await api('POST', `/admin/scraping/queue/${id}/rechazar`, { notas });
+    toast('Cambio rechazado');
+    cargarCola(colaEstadoActual);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Init ───────────────────────────────────────────────────
+async function init() {
+  lucide.createIcons();
+
+  if (!state.token) return; // Mostrar login
+
+  // Intentar validar token existente
+  try {
+    const me = await api('GET', '/auth/me');
+    if (me?.rol !== 'admin') {
+      cerrarSesionLocal();
+      return;
+    }
+    state.usuario = me;
+    mostrarPanel();
+  } catch {
+    cerrarSesionLocal();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

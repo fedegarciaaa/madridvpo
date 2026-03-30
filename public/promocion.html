@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle de Promoción — MadridVPO</title>
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { brand: { 500: '#6366f1', 600: '#4f46e5' } } } }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Mapbox mini-mapa -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+  <style>
+    :root { color-scheme: dark; }
+    body { background: #030712; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+    .badge-premium { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .estado-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .estado-en_proyecto      { background: #1e3a5f; color: #60a5fa; }
+    .estado-en_construccion  { background: #1c3829; color: #34d399; }
+    .estado-lista_espera     { background: #3d2a00; color: #fbbf24; }
+    .estado-sorteo           { background: #3b1f40; color: #c084fc; }
+    .estado-entregado        { background: #1e293b; color: #94a3b8; }
+    #mini-map { width: 100%; height: 220px; border-radius: 12px; overflow: hidden; }
+    .tab-btn { padding: 8px 20px; border-bottom: 2px solid transparent; font-size: 14px; cursor: pointer; transition: all .15s; color: #94a3b8; }
+    .tab-btn.active { color: white; border-bottom-color: #6366f1; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body class="dark min-h-screen">
+
+  <!-- ── NAVBAR ─────────────────────────────────────────── -->
+  <nav class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
+      <a href="/app.html" class="p-1.5 text-slate-400 hover:text-white" title="Volver">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </a>
+      <a href="/" class="flex items-center gap-1.5 font-bold text-sm">
+        <div class="w-7 h-7 brand-gradient rounded-md flex items-center justify-center">
+          <i data-lucide="home" class="w-3.5 h-3.5 text-white"></i>
+        </div>
+        <span class="text-white">Madrid<span class="text-indigo-400">VPO</span></span>
+      </a>
+      <div class="flex-1"></div>
+      <div id="nav-auth" class="flex items-center gap-2">
+        <a href="/" class="text-xs text-slate-400 hover:text-white">Entrar</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── CONTENIDO ──────────────────────────────────────── -->
+  <main class="max-w-5xl mx-auto px-4 py-8" id="main-content">
+    <!-- Loading -->
+    <div id="loading" class="flex flex-col items-center justify-center py-24 text-slate-500">
+      <i data-lucide="loader" class="w-10 h-10 animate-spin mb-4 text-indigo-400"></i>
+      <p>Cargando promoción…</p>
+    </div>
+    <!-- Error -->
+    <div id="error" style="display:none" class="text-center py-24">
+      <i data-lucide="alert-circle" class="w-12 h-12 text-red-400 mx-auto mb-4"></i>
+      <h2 class="text-xl font-bold text-white mb-2">Promoción no encontrada</h2>
+      <p id="error-msg" class="text-slate-400 mb-6">La promoción no existe o no está disponible.</p>
+      <a href="/app.html" class="brand-gradient text-white px-6 py-2.5 rounded-xl text-sm font-medium">Volver al mapa</a>
+    </div>
+    <!-- Promo content -->
+    <div id="promo-content" style="display:none"></div>
+  </main>
+
+  <!-- ── TOAST ───────────────────────────────────────────── -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50" style="display:none">
+    <div class="flex items-center gap-3 bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 shadow-xl">
+      <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-green-400 flex-shrink-0"></i>
+      <span id="toast-msg" class="text-sm text-white"></span>
+    </div>
+  </div>
+
+  <script type="module">
+    import api from '/js/api.js';
+
+    // ── Tema ──────────────────────────────────────────────
+    const savedTheme = localStorage.getItem('mvpo_theme') || 'dark';
+    if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+
+    lucide.createIcons();
+
+    // ── Obtener ID del hash o query ───────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const promoId = params.get('id') || window.location.hash.replace('#', '');
+
+    if (!promoId) {
+      showError('No se especificó ninguna promoción.');
+    } else {
+      cargarPromo(promoId);
+    }
+
+    // ── Navbar ────────────────────────────────────────────
+    if (api.isLogged()) {
+      const user = api.getUser();
+      document.getElementById('nav-auth').innerHTML = `
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-xs font-bold text-white">
+            ${(user?.nombre || 'U')[0].toUpperCase()}
+          </div>
+          <span class="text-sm text-white hidden sm:inline">${user?.nombre?.split(' ')[0] || ''}</span>
+        </div>`;
+    }
+
+    async function cargarPromo(id) {
+      try {
+        const p = await api.promocion(id);
+        document.getElementById('loading').style.display = 'none';
+        document.title = `${p.nombre} — MadridVPO`;
+        renderPromo(p);
+        document.getElementById('promo-content').style.display = '';
+        lucide.createIcons();
+        if (p.lat && p.lng) initMiniMap(p.lat, p.lng, p.nombre);
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error-msg').textContent = msg || 'No disponible.';
+      document.getElementById('error').style.display = '';
+    }
+
+    function renderPromo(p) {
+      const isPremium = api.isPremium();
+      const estadoLabel = {
+        en_proyecto: 'En proyecto', en_construccion: 'En construcción',
+        lista_espera: 'Lista de espera', sorteo: 'Sorteo', entregado: 'Entregado'
+      };
+      const precioText = p.precio_desde
+        ? formatPrice(p.precio_desde) + (p.precio_hasta ? ' – ' + formatPrice(p.precio_hasta) : '')
+        : 'Precio no publicado';
+
+      document.getElementById('promo-content').innerHTML = `
+        <div class="grid lg:grid-cols-3 gap-8">
+
+          <!-- ── Columna principal ──────────────── -->
+          <div class="lg:col-span-2">
+            <!-- Cabecera -->
+            <div class="mb-6">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="estado-badge estado-${p.estado}">${estadoLabel[p.estado] || p.estado}</span>
+                ${p.tipo ? `<span class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full">${p.tipo}</span>` : ''}
+              </div>
+              <h1 class="text-3xl font-bold text-white mb-2">${p.nombre}</h1>
+              <p class="text-slate-400">
+                ${p.promotora?.nombre || p.promotora_nombre || ''}
+                ${p.zona ? ` · ${p.zona}` : ''}
+              </p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b border-slate-800 mb-6">
+              <div class="flex gap-2">
+                <button class="tab-btn active" onclick="switchTab('info', this)">Información</button>
+                ${p.comentarios?.length || api.isLogged() ? `<button class="tab-btn" onclick="switchTab('comentarios', this)">Comentarios${p.comentarios?.length ? ` (${p.comentarios.length})` : ''}</button>` : ''}
+                ${p.fotos_obra?.length ? `<button class="tab-btn" onclick="switchTab('obra', this)">Seguimiento de obra</button>` : ''}
+              </div>
+            </div>
+
+            <!-- Tab: Información -->
+            <div id="tab-info" class="tab-content active">
+              ${p.descripcion ? `<p class="text-slate-300 leading-relaxed mb-6">${p.descripcion}</p>` : ''}
+
+              <!-- Características -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                ${p.m2_desde ? `<div class="bg-slate-800/50 rounded-xl p-4 text-center border border-slate-700"><div class="text-xs text-slate-400 mb-1">Superficie</div><div class="font-semibold text-white">${p.m2_desde}${p.m2_hasta ? '–'+p.m2_hasta : ''}m²</div></div>` : ''}
+                ${p.dormitorios_min ? `<div class="bg-slate-800/50 rounded-xl p-4 text-center border border-slate-700"><div class="text-xs text-slate-400 mb-1">Dormitorios</div><div class="font-semibold text-white">${p.dormitorios_min}${p.dormitorios_max && p.dormitorios_max !== p.dormitorios_min ? '–'+p.dormitorios_max : ''}</div></div>` : ''}
+                ${p.fecha_entrega_est ? `<div class="bg-slate-800/50 rounded-xl p-4 text-center border border-slate-700"><div class="text-xs text-slate-400 mb-1">Entrega est.</div><div class="font-semibold text-white">${new Date(p.fecha_entrega_est).toLocaleDateString('es-ES',{month:'short',year:'numeric'})}</div></div>` : ''}
+                ${p.promotora?.nombre ? `<div class="bg-slate-800/50 rounded-xl p-4 text-center border border-slate-700"><div class="text-xs text-slate-400 mb-1">Promotora</div><div class="font-semibold text-white text-sm truncate">${p.promotora.nombre}</div></div>` : ''}
+              </div>
+
+              <!-- Documentos -->
+              ${p.documentos?.length ? `
+                <h3 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                  <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i> Documentos
+                </h3>
+                <div class="space-y-2 mb-6">
+                  ${p.documentos.map(d => {
+                    if (d.solo_premium && !isPremium) {
+                      return `<div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700 opacity-70">
+                        <i data-lucide="lock" class="w-5 h-5 text-amber-400"></i>
+                        <span class="flex-1 text-slate-400 text-sm">${d.nombre}</span>
+                        <span class="badge-premium text-white text-xs px-2 py-1 rounded-full">Solo Premium</span>
+                      </div>`;
+                    }
+                    return `<a href="/api/documentos/${d.id}" target="_blank"
+                      class="flex items-center gap-3 p-3 rounded-xl bg-slate-800 border border-slate-700 hover:border-indigo-500 transition-colors">
+                      <i data-lucide="download" class="w-5 h-5 text-indigo-400"></i>
+                      <span class="flex-1 text-white text-sm">${d.nombre}</span>
+                      <span class="text-xs text-slate-400 uppercase">${d.tipo}</span>
+                    </a>`;
+                  }).join('')}
+                </div>
+              ` : ''}
+
+              <!-- Mini-mapa -->
+              <h3 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i> Ubicación
+              </h3>
+              <div id="mini-map" class="mb-6"></div>
+            </div>
+
+            <!-- Tab: Comentarios -->
+            <div id="tab-comentarios" class="tab-content">
+              ${api.isLogged() ? `
+                <form onsubmit="enviarComentario(event, ${p.id})" class="mb-6">
+                  <textarea id="comentario-text" rows="3" placeholder="Comparte tu experiencia o pregunta sobre esta promoción…"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+                  <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-slate-500">Los comentarios se publican tras revisión del equipo.</span>
+                    <button type="submit" class="brand-gradient text-white text-sm px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">Enviar</button>
+                  </div>
+                </form>
+              ` : `<div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-6 text-center">
+                <p class="text-slate-400 text-sm mb-2">Inicia sesión para comentar</p>
+                <a href="/" class="text-indigo-400 text-sm hover:text-indigo-300">Ir al inicio →</a>
+              </div>`}
+
+              <div id="comentarios-lista">
+                ${p.comentarios?.length
+                  ? p.comentarios.map(c => `
+                      <div class="mb-4 border-b border-slate-800 pb-4">
+                        <div class="flex items-center gap-2 mb-2">
+                          <div class="w-7 h-7 bg-indigo-800 rounded-full flex items-center justify-center text-xs font-bold">
+                            ${(c.nombre || 'U')[0].toUpperCase()}
+                          </div>
+                          <span class="text-sm font-medium text-white">${c.nombre || 'Usuario'}</span>
+                          <span class="text-xs text-slate-500">${new Date(c.created_at).toLocaleDateString('es-ES')}</span>
+                        </div>
+                        <p class="text-sm text-slate-300 ml-9">${c.contenido}</p>
+                      </div>`).join('')
+                  : `<p class="text-slate-500 text-sm text-center py-8">Todavía no hay comentarios. ¡Sé el primero!</p>`
+                }
+              </div>
+            </div>
+
+            <!-- Tab: Seguimiento de obra -->
+            <div id="tab-obra" class="tab-content">
+              ${p.fotos_obra?.length
+                ? `<div class="grid grid-cols-2 gap-3">
+                    ${p.fotos_obra.map(f => `
+                      <div class="rounded-xl overflow-hidden bg-slate-800">
+                        <img src="${f.url}" alt="${f.descripcion || 'Foto de obra'}" class="w-full h-40 object-cover" loading="lazy" />
+                        <div class="p-2 text-xs text-slate-400">${f.descripcion || ''} · ${new Date(f.fecha).toLocaleDateString('es-ES')}</div>
+                      </div>`).join('')}
+                  </div>`
+                : `<p class="text-slate-500 text-sm text-center py-8">No hay fotos de seguimiento de obra todavía.</p>`
+              }
+            </div>
+          </div>
+
+          <!-- ── Sidebar lateral ─────────────────── -->
+          <div class="lg:col-span-1">
+            <!-- Precio destacado -->
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 mb-4 sticky top-20">
+              <div class="text-xs text-slate-400 mb-1">Precio desde</div>
+              <div class="text-2xl font-bold ${p.precio_desde ? 'text-indigo-300' : 'text-slate-500'} mb-4">
+                ${precioText}
+              </div>
+
+              ${p.web_oficial ? `
+                <a href="${p.web_oficial}" target="_blank" rel="noopener"
+                  class="w-full flex items-center justify-center gap-2 brand-gradient text-white py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity mb-3">
+                  <i data-lucide="external-link" class="w-4 h-4"></i>
+                  Ir a la web oficial
+                </a>` : ''}
+
+              ${!api.isLogged()
+                ? `<a href="/" class="w-full flex items-center justify-center gap-2 border border-indigo-500 text-indigo-400 hover:bg-indigo-900/30 py-3 rounded-xl text-sm font-medium transition-colors">
+                    <i data-lucide="bell" class="w-4 h-4"></i> Recibir alertas de esta zona
+                  </a>`
+                : `<button onclick="marcarInteres(${p.id})" class="w-full flex items-center justify-center gap-2 border border-slate-600 text-slate-300 hover:border-indigo-500 py-3 rounded-xl text-sm font-medium transition-colors">
+                    <i data-lucide="bookmark" class="w-4 h-4"></i> Guardar en Mi Expediente
+                  </button>`
+              }
+
+              ${!isPremium ? `
+                <div class="mt-4 p-3 bg-amber-900/20 border border-amber-700/40 rounded-xl">
+                  <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                    <span class="text-sm font-semibold text-amber-300">Alertas instantáneas</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-2">Sé el primero en enterarte con Premium.</p>
+                  <a href="/#planes" class="text-xs text-amber-400 hover:text-amber-300">Ver planes →</a>
+                </div>` : ''}
+
+              <!-- Info adicional -->
+              <div class="mt-4 pt-4 border-t border-slate-700 space-y-2 text-xs text-slate-400">
+                ${p.published_at ? `<div class="flex justify-between"><span>Publicado</span><span class="text-slate-300">${new Date(p.published_at).toLocaleDateString('es-ES')}</span></div>` : ''}
+                ${p.web_oficial ? `<div class="flex justify-between"><span>Web oficial</span><a href="${p.web_oficial}" target="_blank" class="text-indigo-400 hover:text-indigo-300 truncate max-w-32">${new URL(p.web_oficial).hostname}</a></div>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      lucide.createIcons();
+    }
+
+    // ── Mini-mapa ─────────────────────────────────────────
+    function initMiniMap(lat, lng, nombre) {
+      mapboxgl.accessToken = 'pk.eyJ1IjoiZmVkZXhlbGUiLCJhIjoiY2tyYXZ5NzFlMTBmZTJ1cDhocTh4ejUwYiJ9.70OYqkXXbLJgn3Ioi06m3w';
+      const map = new mapboxgl.Map({
+        container: 'mini-map',
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [lng, lat],
+        zoom: 14,
+        interactive: false,
+      });
+      new mapboxgl.Marker({ color: '#6366f1' }).setLngLat([lng, lat]).addTo(map);
+    }
+
+    // ── Tabs ──────────────────────────────────────────────
+    window.switchTab = (tab, btn) => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${tab}`)?.classList.add('active');
+      lucide.createIcons();
+    };
+
+    // ── Comentarios ───────────────────────────────────────
+    window.enviarComentario = async (e, id) => {
+      e.preventDefault();
+      const txt = document.getElementById('comentario-text').value.trim();
+      if (!txt) return;
+      try {
+        await api.comentar(id, txt);
+        document.getElementById('comentario-text').value = '';
+        showToast('Comentario enviado. Pendiente de revisión.', 'success');
+      } catch (err) {
+        showToast(err.message || 'Error al enviar comentario', 'error');
+      }
+    };
+
+    // ── Mi Expediente ─────────────────────────────────────
+    window.marcarInteres = async (id) => {
+      showToast('Función disponible próximamente en Mi Expediente.', 'info');
+    };
+
+    // ── Toast ─────────────────────────────────────────────
+    let _toastTimer;
+    window.showToast = (msg, type = 'success') => {
+      const icons  = { success: 'check-circle', error: 'alert-circle', info: 'info' };
+      const colors = { success: 'text-green-400', error: 'text-red-400', info: 'text-blue-400' };
+      document.getElementById('toast-icon').setAttribute('data-lucide', icons[type] || 'info');
+      document.getElementById('toast-icon').className = `w-5 h-5 flex-shrink-0 ${colors[type] || colors.info}`;
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast').style.display = '';
+      lucide.createIcons();
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => { document.getElementById('toast').style.display = 'none'; }, 3500);
+    };
+
+    // ── Format price ──────────────────────────────────────
+    function formatPrice(n) {
+      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+    }
+  </script>
+</body>
+</html>

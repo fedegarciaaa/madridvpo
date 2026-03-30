@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (NUNCA subir al repo)
+.env
+
+# Uploads de usuarios
+uploads/
+
+# Logs
+*.log
+logs/
+
+# OS y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Puppeteer cache
+.local-chromium/

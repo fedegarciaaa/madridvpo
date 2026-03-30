@@ -1,0 +1,14 @@
+{
+  "name": "MadridVPO — Vivienda Protegida Madrid",
+  "short_name": "MadridVPO",
+  "description": "Alertas tempranas de vivienda VPO y VPPL en Madrid. Monitorización de promotoras en tiempo real.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#4c6ef5",
+  "lang": "es",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

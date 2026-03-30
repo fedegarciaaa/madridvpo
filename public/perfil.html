@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Perfil — MadridVPO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['attribute', '[data-theme="dark"]'],
+      theme: { extend: {} }
+    };
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root { --bg: #f8fafc; --surface: #ffffff; --border: #e2e8f0; --text: #1e293b; --muted: #64748b; }
+    [data-theme="dark"] { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #f1f5f9; --muted: #94a3b8; }
+    body { background: var(--bg); color: var(--text); transition: background .2s, color .2s; }
+    .surface { background: var(--surface); border-color: var(--border); }
+    .tab-btn.active { border-bottom: 2px solid #8b5cf6; color: #8b5cf6; font-weight: 600; }
+    .badge-free    { background: #e2e8f0; color: #475569; }
+    .badge-premium { background: #ede9fe; color: #6d28d9; }
+    .badge-admin   { background: #fee2e2; color: #b91c1c; }
+    [data-theme="dark"] .badge-free    { background: #334155; color: #94a3b8; }
+    [data-theme="dark"] .badge-premium { background: #2e1065; color: #c4b5fd; }
+    [data-theme="dark"] .badge-admin   { background: #450a0a; color: #fca5a5; }
+    .toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; display:flex; gap:.5rem; align-items:center; padding:.75rem 1.25rem; border-radius:.75rem; box-shadow:0 4px 20px rgba(0,0,0,.15); font-size:.9rem; font-weight:500; transition:all .3s; }
+    .toast.ok  { background:#10b981; color:#fff; }
+    .toast.err { background:#ef4444; color:#fff; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid #8b5cf6; outline-offset: 0; }
+    .modal-bg { backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- ── NAVBAR ─────────────────────────────────────────────────── -->
+<nav class="surface border-b sticky top-0 z-40" style="border-color:var(--border)">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2 font-bold text-purple-600 text-lg">
+      <i data-lucide="building-2" class="w-5 h-5"></i>
+      MadridVPO
+    </a>
+    <div class="flex items-center gap-3">
+      <a href="/app.html" class="text-sm" style="color:var(--muted)">
+        <i data-lucide="map" class="w-4 h-4 inline -mt-0.5"></i> Mapa
+      </a>
+      <span id="nav-nombre" class="text-sm font-medium" style="color:var(--text)">—</span>
+      <span id="nav-badge" class="text-xs px-2 py-0.5 rounded-full badge-free">free</span>
+      <button id="btn-dark" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700" title="Tema">
+        <i data-lucide="moon" class="w-4 h-4" style="color:var(--muted)"></i>
+      </button>
+      <button id="btn-salir" class="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Salir
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── TABS ───────────────────────────────────────────────────── -->
+<div class="max-w-5xl mx-auto px-4 mt-6">
+  <div class="surface rounded-xl border overflow-hidden" style="border-color:var(--border)">
+    <div class="flex border-b" style="border-color:var(--border)">
+      <button class="tab-btn active px-5 py-3 text-sm" data-tab="perfil">
+        <i data-lucide="user" class="w-4 h-4 inline -mt-0.5 mr-1"></i>Mi Perfil
+      </button>
+      <button class="tab-btn px-5 py-3 text-sm" data-tab="alertas">
+        <i data-lucide="bell" class="w-4 h-4 inline -mt-0.5 mr-1"></i>Mis Alertas
+        <span id="alertas-count" class="ml-1 text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full hidden">0</span>
+      </button>
+      <button class="tab-btn px-5 py-3 text-sm" data-tab="expediente">
+        <i data-lucide="folder" class="w-4 h-4 inline -mt-0.5 mr-1"></i>Mi Expediente
+      </button>
+      <button class="tab-btn px-5 py-3 text-sm" data-tab="preferencias">
+        <i data-lucide="settings" class="w-4 h-4 inline -mt-0.5 mr-1"></i>Preferencias
+      </button>
+    </div>
+
+    <!-- TAB: MI PERFIL ──────────────────────────────────────── -->
+    <div id="tab-perfil" class="tab-content p-6">
+      <h2 class="text-lg font-semibold mb-4" style="color:var(--text)">Datos de cuenta</h2>
+      <form id="form-perfil" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Email</label>
+          <input id="perfil-email" type="email" readonly
+            class="w-full px-3 py-2 rounded-lg border text-sm bg-gray-50 cursor-not-allowed"
+            style="border-color:var(--border);background:var(--bg);color:var(--muted)" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Nombre</label>
+          <input id="perfil-nombre" type="text" placeholder="Tu nombre"
+            class="w-full px-3 py-2 rounded-lg border text-sm"
+            style="border-color:var(--border);background:var(--surface);color:var(--text)" />
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium mb-1" style="color:var(--muted)">
+            Telegram Chat ID
+            <span class="text-xs font-normal ml-1">(para recibir alertas por Telegram)</span>
+          </label>
+          <input id="perfil-telegram" type="text" placeholder="Ej: 123456789"
+            class="w-full px-3 py-2 rounded-lg border text-sm"
+            style="border-color:var(--border);background:var(--surface);color:var(--text)" />
+        </div>
+        <div class="sm:col-span-2 flex gap-3">
+          <button type="submit"
+            class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 font-medium">
+            Guardar cambios
+          </button>
+          <button type="button" id="btn-cambiar-pass"
+            class="px-4 py-2 border text-sm rounded-lg hover:bg-gray-50 font-medium"
+            style="border-color:var(--border);color:var(--text)">
+            Cambiar contraseña
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- TAB: MIS ALERTAS ────────────────────────────────────── -->
+    <div id="tab-alertas" class="tab-content p-6 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold" style="color:var(--text)">Mis alertas de búsqueda</h2>
+        <button id="btn-nueva-alerta"
+          class="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nueva alerta
+        </button>
+      </div>
+      <div id="alertas-lista">
+        <p class="text-sm" style="color:var(--muted)">Cargando alertas…</p>
+      </div>
+    </div>
+
+    <!-- TAB: MI EXPEDIENTE ──────────────────────────────────── -->
+    <div id="tab-expediente" class="tab-content p-6 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold" style="color:var(--text)">Mi expediente de promociones</h2>
+        <button id="btn-add-interes"
+          class="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">
+          <i data-lucide="plus" class="w-4 h-4"></i> Añadir
+        </button>
+      </div>
+      <p class="text-sm mb-4" style="color:var(--muted)">
+        Registra las promociones en las que has mostrado interés, tu estado en listas de espera y notas personales.
+      </p>
+      <div id="expediente-lista"></div>
+    </div>
+
+    <!-- TAB: PREFERENCIAS ───────────────────────────────────── -->
+    <div id="tab-preferencias" class="tab-content p-6 hidden">
+      <h2 class="text-lg font-semibold mb-4" style="color:var(--text)">Preferencias de búsqueda</h2>
+      <form id="form-pref" class="max-w-xl space-y-5">
+
+        <div>
+          <p class="text-sm font-medium mb-2" style="color:var(--text)">Zonas de interés</p>
+          <div class="grid grid-cols-2 gap-2" id="pref-zonas">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="berrocales" class="accent-purple-600 w-4 h-4" /> Berrocales
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="valdecarros" class="accent-purple-600 w-4 h-4" /> Valdecarros
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="ahijones" class="accent-purple-600 w-4 h-4" /> Ahijones
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="los_cerros" class="accent-purple-600 w-4 h-4" /> Los Cerros
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="valdebebas" class="accent-purple-600 w-4 h-4" /> Valdebebas
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="otra" class="accent-purple-600 w-4 h-4" /> Otra zona
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-sm font-medium mb-2" style="color:var(--text)">Tipos de vivienda</p>
+          <div class="grid grid-cols-2 gap-2" id="pref-tipos">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="VPO" class="accent-purple-600 w-4 h-4" /> VPO
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="VPPL" class="accent-purple-600 w-4 h-4" /> VPPL
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="cooperativa" class="accent-purple-600 w-4 h-4" /> Cooperativa
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" value="libre" class="accent-purple-600 w-4 h-4" /> Libre
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1" style="color:var(--text)">Precio máximo (€)</label>
+            <input id="pref-precio" type="number" min="0" step="5000" placeholder="Ej: 200000"
+              class="w-full px-3 py-2 rounded-lg border text-sm"
+              style="border-color:var(--border);background:var(--surface);color:var(--text)" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" style="color:var(--text)">Dormitorios mínimos</label>
+            <select id="pref-dorms" class="w-full px-3 py-2 rounded-lg border text-sm"
+              style="border-color:var(--border);background:var(--surface);color:var(--text)">
+              <option value="">Cualquiera</option>
+              <option value="1">1+</option>
+              <option value="2">2+</option>
+              <option value="3">3+</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-sm font-medium mb-2" style="color:var(--text)">Notificaciones</p>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" id="pref-notif-email" class="accent-purple-600 w-4 h-4" />
+              Recibir alertas por email
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" id="pref-notif-telegram" class="accent-purple-600 w-4 h-4" />
+              Recibir alertas por Telegram
+            </label>
+          </div>
+        </div>
+
+        <button type="submit"
+          class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 font-medium">
+          Guardar preferencias
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CAMBIAR PASSWORD ─────────────────────────────────── -->
+<div id="modal-pass" class="fixed inset-0 bg-black/50 modal-bg z-50 hidden flex items-center justify-center p-4">
+  <div class="surface rounded-2xl border p-6 w-full max-w-sm shadow-2xl" style="border-color:var(--border)">
+    <h3 class="font-semibold text-base mb-4" style="color:var(--text)">Cambiar contraseña</h3>
+    <form id="form-pass" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Contraseña actual</label>
+        <input id="pass-actual" type="password" class="w-full px-3 py-2 rounded-lg border text-sm"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)" required />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Nueva contraseña</label>
+        <input id="pass-nueva" type="password" class="w-full px-3 py-2 rounded-lg border text-sm"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)" required minlength="8" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Confirmar nueva</label>
+        <input id="pass-confirmar" type="password" class="w-full px-3 py-2 rounded-lg border text-sm"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)" required />
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 font-medium">
+          Guardar
+        </button>
+        <button type="button" id="btn-close-pass"
+          class="flex-1 py-2 border text-sm rounded-lg hover:bg-gray-50 font-medium"
+          style="border-color:var(--border);color:var(--text)">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── MODAL ALERTA ───────────────────────────────────────────── -->
+<div id="modal-alerta" class="fixed inset-0 bg-black/50 modal-bg z-50 hidden flex items-center justify-center p-4">
+  <div class="surface rounded-2xl border p-6 w-full max-w-md shadow-2xl" style="border-color:var(--border)">
+    <h3 id="modal-alerta-title" class="font-semibold text-base mb-4" style="color:var(--text)">Nueva alerta</h3>
+    <form id="form-alerta" class="space-y-4">
+      <input type="hidden" id="alerta-id" value="" />
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Nombre de la alerta</label>
+        <input id="alerta-nombre" type="text" placeholder="Ej: Berrocales 3 hab" required
+          class="w-full px-3 py-2 rounded-lg border text-sm"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)" />
+      </div>
+      <div>
+        <p class="text-sm font-medium mb-1.5" style="color:var(--muted)">Zonas</p>
+        <div class="grid grid-cols-2 gap-1.5" id="alerta-zonas">
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="berrocales" class="accent-purple-600"> Berrocales</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="valdecarros" class="accent-purple-600"> Valdecarros</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="ahijones" class="accent-purple-600"> Ahijones</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="los_cerros" class="accent-purple-600"> Los Cerros</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="valdebebas" class="accent-purple-600"> Valdebebas</label>
+        </div>
+      </div>
+      <div>
+        <p class="text-sm font-medium mb-1.5" style="color:var(--muted)">Tipos</p>
+        <div class="grid grid-cols-2 gap-1.5" id="alerta-tipos">
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="VPO" class="accent-purple-600"> VPO</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="VPPL" class="accent-purple-600"> VPPL</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="cooperativa" class="accent-purple-600"> Cooperativa</label>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Precio máx (€)</label>
+          <input id="alerta-precio" type="number" min="0" step="5000" placeholder="Sin límite"
+            class="w-full px-3 py-2 rounded-lg border text-sm"
+            style="border-color:var(--border);background:var(--surface);color:var(--text)" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Dormitorios</label>
+          <div class="flex gap-1 mt-1">
+            <label class="flex items-center gap-1 text-sm cursor-pointer"><input type="checkbox" value="1" class="accent-purple-600"> 1</label>
+            <label class="flex items-center gap-1 text-sm cursor-pointer ml-2"><input type="checkbox" value="2" class="accent-purple-600"> 2</label>
+            <label class="flex items-center gap-1 text-sm cursor-pointer ml-2"><input type="checkbox" value="3" class="accent-purple-600"> 3</label>
+            <label class="flex items-center gap-1 text-sm cursor-pointer ml-2"><input type="checkbox" value="4" class="accent-purple-600"> 4+</label>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" id="alerta-email" checked class="accent-purple-600"> Email
+        </label>
+        <label class="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" id="alerta-telegram" class="accent-purple-600"> Telegram
+        </label>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 font-medium">
+          Guardar
+        </button>
+        <button type="button" id="btn-close-alerta"
+          class="flex-1 py-2 border text-sm rounded-lg hover:bg-gray-50 font-medium"
+          style="border-color:var(--border);color:var(--text)">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── MODAL AÑADIR INTERÉS ───────────────────────────────────── -->
+<div id="modal-interes" class="fixed inset-0 bg-black/50 modal-bg z-50 hidden flex items-center justify-center p-4">
+  <div class="surface rounded-2xl border p-6 w-full max-w-md shadow-2xl" style="border-color:var(--border)">
+    <h3 class="font-semibold text-base mb-4" style="color:var(--text)">Añadir al expediente</h3>
+    <form id="form-interes" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Nombre de la promoción</label>
+        <input id="interes-nombre" type="text" placeholder="Ej: Ibosa Berrocales" required
+          class="w-full px-3 py-2 rounded-lg border text-sm"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Estado</label>
+        <select id="interes-estado" class="w-full px-3 py-2 rounded-lg border text-sm"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)">
+          <option value="interesado">Interesado</option>
+          <option value="formulario_enviado">Formulario enviado</option>
+          <option value="lista_espera">En lista de espera</option>
+          <option value="dossier_recibido">Dossier recibido</option>
+          <option value="descartado">Descartado</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1" style="color:var(--muted)">Notas personales</label>
+        <textarea id="interes-notas" rows="3" placeholder="Cualquier información relevante…"
+          class="w-full px-3 py-2 rounded-lg border text-sm resize-none"
+          style="border-color:var(--border);background:var(--surface);color:var(--text)"></textarea>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 font-medium">
+          Añadir
+        </button>
+        <button type="button" id="btn-close-interes"
+          class="flex-1 py-2 border text-sm rounded-lg hover:bg-gray-50 font-medium"
+          style="border-color:var(--border);color:var(--text)">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── TOAST ──────────────────────────────────────────────────── -->
+<div id="toast" class="toast hidden"></div>
+
+<script type="module">
+import api from '/js/api.js';
+
+// ── Auth guard ────────────────────────────────────────────────
+if (!api.isLogged()) {
+  window.location.href = '/';
+}
+
+window.addEventListener('mvpo:unauthorized', () => {
+  window.location.href = '/';
+});
+
+// ── Estado ────────────────────────────────────────────────────
+const state = { perfil: null, alertas: [] };
+
+// ── DOM helpers ───────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+const toast = (msg, tipo='ok', ms=3000) => {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = `toast ${tipo}`;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), ms);
+};
+
+// ── Dark mode ─────────────────────────────────────────────────
+const theme = localStorage.getItem('mvpo-theme') || 'light';
+document.documentElement.setAttribute('data-theme', theme);
+$('btn-dark').addEventListener('click', () => {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('mvpo-theme', t);
+  const icon = $('btn-dark').querySelector('[data-lucide]');
+  icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
+  lucide.createIcons();
+});
+if (theme === 'dark') {
+  const icon = $('btn-dark').querySelector('[data-lucide]');
+  icon.setAttribute('data-lucide', 'sun');
+}
+
+// ── Salir ─────────────────────────────────────────────────────
+$('btn-salir').addEventListener('click', async () => {
+  try { await api.logout(); } catch (_) {}
+  api.setToken(null);
+  api.setUser(null);
+  window.location.href = '/';
+});
+
+// ── Tabs ──────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    btn.classList.add('active');
+    $('tab-' + btn.dataset.tab).classList.remove('hidden');
+  });
+});
+
+// ── Carga inicial ─────────────────────────────────────────────
+async function cargar() {
+  try {
+    const [pRes, aRes] = await Promise.all([api.miPerfil(), api.alertas()]);
+    if (pRes.success) {
+      state.perfil = pRes.data;
+      renderNavbar(pRes.data);
+      rellenarFormPerfil(pRes.data);
+      rellenarFormPref(pRes.data.preferencias || {});
+      renderExpediente(pRes.data.expediente?.intereses || []);
+    }
+    if (aRes.success) {
+      state.alertas = aRes.data;
+      renderAlertas(aRes.data);
+      const count = $('alertas-count');
+      if (aRes.data.length > 0) {
+        count.textContent = aRes.data.length;
+        count.classList.remove('hidden');
+      }
+    }
+  } catch (e) {
+    console.error('Error cargando perfil:', e);
+    toast('Error cargando datos', 'err');
+  }
+}
+
+function renderNavbar(u) {
+  $('nav-nombre').textContent = u.nombre || u.email;
+  const badge = $('nav-badge');
+  badge.textContent = u.rol;
+  badge.className = `text-xs px-2 py-0.5 rounded-full badge-${u.rol}`;
+}
+
+function rellenarFormPerfil(u) {
+  $('perfil-email').value    = u.email || '';
+  $('perfil-nombre').value   = u.nombre || '';
+  $('perfil-telegram').value = u.telegram_chat_id || '';
+}
+
+// ── Formulario perfil ─────────────────────────────────────────
+$('form-perfil').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const res = await api.actualizarPerfil({
+      nombre:           $('perfil-nombre').value.trim(),
+      telegram_chat_id: $('perfil-telegram').value.trim() || null
+    });
+    if (res.success) {
+      state.perfil = { ...state.perfil, ...res.data };
+      renderNavbar(state.perfil);
+      toast('Perfil actualizado');
+    } else {
+      toast(res.error || 'Error al guardar', 'err');
+    }
+  } catch (e) {
+    toast('Error al guardar', 'err');
+  }
+});
+
+// ── Modal cambiar contraseña ──────────────────────────────────
+$('btn-cambiar-pass').addEventListener('click', () => $('modal-pass').classList.remove('hidden'));
+$('btn-close-pass').addEventListener('click', () => $('modal-pass').classList.add('hidden'));
+$('modal-pass').addEventListener('click', (e) => {
+  if (e.target === $('modal-pass')) $('modal-pass').classList.add('hidden');
+});
+
+$('form-pass').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nueva = $('pass-nueva').value;
+  const conf  = $('pass-confirmar').value;
+  if (nueva !== conf) return toast('Las contraseñas no coinciden', 'err');
+  try {
+    const res = await api.cambiarPassword({
+      password_actual: $('pass-actual').value,
+      password_nueva:  nueva
+    });
+    if (res.success) {
+      $('modal-pass').classList.add('hidden');
+      $('form-pass').reset();
+      toast('Contraseña actualizada');
+    } else {
+      toast(res.error || 'Error', 'err');
+    }
+  } catch (e) {
+    toast('Error al cambiar contraseña', 'err');
+  }
+});
+
+// ── Alertas: render ───────────────────────────────────────────
+function renderAlertas(alertas) {
+  const lista = $('alertas-lista');
+  if (!alertas.length) {
+    lista.innerHTML = `<p class="text-sm" style="color:var(--muted)">No tienes alertas. Crea una para recibir notificaciones de nuevas promociones.</p>`;
+    return;
+  }
+  lista.innerHTML = alertas.map(a => `
+    <div class="border rounded-xl p-4 mb-3 flex items-start justify-between gap-4 surface"
+         style="border-color:var(--border)" id="alerta-row-${a.id}">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="font-medium text-sm" style="color:var(--text)">${escHtml(a.nombre)}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full ${a.activa ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
+            ${a.activa ? 'Activa' : 'Pausada'}
+          </span>
+        </div>
+        <p class="text-xs" style="color:var(--muted)">
+          ${[...(a.zonas||[]), ...(a.tipos||[])].join(' · ') || 'Sin filtros'}
+          ${a.precio_max ? ` · Max ${fmtPrecio(a.precio_max)}` : ''}
+          ${a.notif_email ? ' · 📧' : ''}
+          ${a.notif_telegram ? ' · 💬' : ''}
+        </p>
+      </div>
+      <div class="flex gap-1.5 shrink-0">
+        <button onclick="toggleAlerta(${a.id})"
+          class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700" title="${a.activa ? 'Pausar' : 'Activar'}">
+          <i data-lucide="${a.activa ? 'pause' : 'play'}" class="w-4 h-4" style="color:var(--muted)"></i>
+        </button>
+        <button onclick="editarAlerta(${a.id})"
+          class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700" title="Editar">
+          <i data-lucide="pencil" class="w-4 h-4" style="color:var(--muted)"></i>
+        </button>
+        <button onclick="borrarAlerta(${a.id})"
+          class="p-1.5 rounded-lg hover:bg-red-50" title="Eliminar">
+          <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+window.toggleAlerta = async (id) => {
+  try {
+    const res = await api.toggleAlerta(id);
+    if (res.success) {
+      state.alertas = state.alertas.map(a => a.id === id ? res.data : a);
+      renderAlertas(state.alertas);
+    }
+  } catch (e) { toast('Error', 'err'); }
+};
+
+window.editarAlerta = (id) => {
+  const a = state.alertas.find(x => x.id === id);
+  if (!a) return;
+  $('alerta-id').value    = a.id;
+  $('alerta-nombre').value = a.nombre;
+  $('alerta-precio').value = a.precio_max || '';
+  $('alerta-email').checked    = !!a.notif_email;
+  $('alerta-telegram').checked = !!a.notif_telegram;
+  // checkboxes zonas
+  document.querySelectorAll('#alerta-zonas input').forEach(cb => {
+    cb.checked = (a.zonas || []).includes(cb.value);
+  });
+  document.querySelectorAll('#alerta-tipos input').forEach(cb => {
+    cb.checked = (a.tipos || []).includes(cb.value);
+  });
+  $('modal-alerta-title').textContent = 'Editar alerta';
+  $('modal-alerta').classList.remove('hidden');
+};
+
+window.borrarAlerta = async (id) => {
+  if (!confirm('¿Eliminar esta alerta?')) return;
+  try {
+    const res = await api.borrarAlerta(id);
+    if (res.success) {
+      state.alertas = state.alertas.filter(a => a.id !== id);
+      renderAlertas(state.alertas);
+      toast('Alerta eliminada');
+    }
+  } catch (e) { toast('Error', 'err'); }
+};
+
+// ── Modal nueva/editar alerta ─────────────────────────────────
+$('btn-nueva-alerta').addEventListener('click', () => {
+  $('alerta-id').value = '';
+  $('form-alerta').reset();
+  $('modal-alerta-title').textContent = 'Nueva alerta';
+  $('modal-alerta').classList.remove('hidden');
+});
+$('btn-close-alerta').addEventListener('click', () => $('modal-alerta').classList.add('hidden'));
+$('modal-alerta').addEventListener('click', (e) => {
+  if (e.target === $('modal-alerta')) $('modal-alerta').classList.add('hidden');
+});
+
+$('form-alerta').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id    = $('alerta-id').value;
+  const datos = {
+    nombre:         $('alerta-nombre').value.trim(),
+    zonas:          [...document.querySelectorAll('#alerta-zonas input:checked')].map(cb => cb.value),
+    tipos:          [...document.querySelectorAll('#alerta-tipos input:checked')].map(cb => cb.value),
+    precio_max:     $('alerta-precio').value ? Number($('alerta-precio').value) : null,
+    dormitorios:    [...document.querySelectorAll('#form-alerta .dormitorios:checked')].map(cb => Number(cb.value)),
+    notif_email:    $('alerta-email').checked,
+    notif_telegram: $('alerta-telegram').checked
+  };
+  try {
+    const res = id
+      ? await api.actualizarAlerta(id, datos)
+      : await api.crearAlerta(datos);
+    if (res.success) {
+      if (id) {
+        state.alertas = state.alertas.map(a => a.id === Number(id) ? res.data : a);
+      } else {
+        state.alertas.unshift(res.data);
+      }
+      renderAlertas(state.alertas);
+      $('modal-alerta').classList.add('hidden');
+      toast(id ? 'Alerta actualizada' : 'Alerta creada');
+      const count = $('alertas-count');
+      count.textContent = state.alertas.length;
+      count.classList.remove('hidden');
+    } else {
+      toast(res.error || 'Error', 'err');
+    }
+  } catch (e) { toast('Error', 'err'); }
+});
+
+// ── Expediente: render ────────────────────────────────────────
+function renderExpediente(intereses) {
+  const lista = $('expediente-lista');
+  if (!intereses.length) {
+    lista.innerHTML = `<p class="text-sm" style="color:var(--muted)">Sin entradas. Usa "Añadir" para registrar promociones de interés.</p>`;
+    return;
+  }
+  const estadoLabel = {
+    interesado: { text: 'Interesado', cls: 'bg-blue-100 text-blue-700' },
+    formulario_enviado: { text: 'Formulario enviado', cls: 'bg-yellow-100 text-yellow-700' },
+    lista_espera: { text: 'Lista de espera', cls: 'bg-orange-100 text-orange-700' },
+    dossier_recibido: { text: 'Dossier recibido', cls: 'bg-green-100 text-green-700' },
+    descartado: { text: 'Descartado', cls: 'bg-gray-100 text-gray-500' }
+  };
+  lista.innerHTML = intereses.map((item, i) => {
+    const e = estadoLabel[item.estado] || estadoLabel.interesado;
+    return `
+    <div class="border rounded-xl p-4 mb-3 surface" style="border-color:var(--border)">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="font-medium text-sm mb-1" style="color:var(--text)">${escHtml(item.nombre)}</p>
+          <span class="text-xs px-2 py-0.5 rounded-full ${e.cls}">${e.text}</span>
+          ${item.notas ? `<p class="text-xs mt-2" style="color:var(--muted)">${escHtml(item.notas)}</p>` : ''}
+        </div>
+        <button onclick="quitarInteres(${i})"
+          class="p-1.5 rounded-lg hover:bg-red-50 shrink-0" title="Eliminar">
+          <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+window.quitarInteres = async (idx) => {
+  if (!confirm('¿Eliminar esta entrada?')) return;
+  const intereses = (state.perfil?.expediente?.intereses || []).filter((_, i) => i !== idx);
+  try {
+    const res = await api.actualizarExpediente({ intereses });
+    if (res.success) {
+      state.perfil.expediente = res.data.expediente;
+      renderExpediente(res.data.expediente?.intereses || []);
+      toast('Entrada eliminada');
+    }
+  } catch (e) { toast('Error', 'err'); }
+};
+
+$('btn-add-interes').addEventListener('click', () => $('modal-interes').classList.remove('hidden'));
+$('btn-close-interes').addEventListener('click', () => $('modal-interes').classList.add('hidden'));
+$('modal-interes').addEventListener('click', (e) => {
+  if (e.target === $('modal-interes')) $('modal-interes').classList.add('hidden');
+});
+
+$('form-interes').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nueva = {
+    nombre:   $('interes-nombre').value.trim(),
+    estado:   $('interes-estado').value,
+    notas:    $('interes-notas').value.trim(),
+    fecha:    new Date().toISOString().split('T')[0]
+  };
+  const intereses = [...(state.perfil?.expediente?.intereses || []), nueva];
+  try {
+    const res = await api.actualizarExpediente({ intereses });
+    if (res.success) {
+      state.perfil.expediente = res.data.expediente;
+      renderExpediente(res.data.expediente?.intereses || []);
+      $('modal-interes').classList.add('hidden');
+      $('form-interes').reset();
+      toast('Añadido al expediente');
+    } else {
+      toast(res.error || 'Error', 'err');
+    }
+  } catch (e) { toast('Error', 'err'); }
+});
+
+// ── Preferencias: render + guardar ───────────────────────────
+function rellenarFormPref(pref) {
+  const zonas = pref.zonas || [];
+  document.querySelectorAll('#pref-zonas input').forEach(cb => {
+    cb.checked = zonas.includes(cb.value);
+  });
+  const tipos = pref.tipos || [];
+  document.querySelectorAll('#pref-tipos input').forEach(cb => {
+    cb.checked = tipos.includes(cb.value);
+  });
+  if (pref.precio_max) $('pref-precio').value = pref.precio_max;
+  if (pref.dormitorios_min) $('pref-dorms').value = pref.dormitorios_min;
+  $('pref-notif-email').checked    = pref.notif_email !== false;
+  $('pref-notif-telegram').checked = !!pref.notif_telegram;
+}
+
+$('form-pref').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const patch = {
+    zonas:           [...document.querySelectorAll('#pref-zonas input:checked')].map(cb => cb.value),
+    tipos:           [...document.querySelectorAll('#pref-tipos input:checked')].map(cb => cb.value),
+    precio_max:      $('pref-precio').value ? Number($('pref-precio').value) : null,
+    dormitorios_min: $('pref-dorms').value ? Number($('pref-dorms').value) : null,
+    notif_email:     $('pref-notif-email').checked,
+    notif_telegram:  $('pref-notif-telegram').checked
+  };
+  try {
+    const res = await api.actualizarPreferencias(patch);
+    if (res.success) {
+      state.perfil.preferencias = res.data.preferencias;
+      toast('Preferencias guardadas');
+    } else {
+      toast(res.error || 'Error', 'err');
+    }
+  } catch (e) { toast('Error guardando preferencias', 'err'); }
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmtPrecio(n) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+}
+
+// ── Arrancar ──────────────────────────────────────────────────
+lucide.createIcons();
+cargar();
+</script>
+</body>
+</html>
