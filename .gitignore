@@ -19,3 +19,9 @@ Thumbs.db
 
 # Puppeteer cache
 .local-chromium/
+
+# Claude memory (local only)
+C--TrabajosIPF-madridvpo/
+
+# Claude local settings (keep launch.json but not local settings)
+.claude/settings.local.json
