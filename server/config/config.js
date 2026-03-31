@@ -13,16 +13,26 @@ export default {
   NODE_ENV: process.env.NODE_ENV || 'development',
 
   // Base de datos PostgreSQL
-  DB: {
-    host:     process.env.DB_HOST     || 'localhost',
-    port:     parseInt(process.env.DB_PORT) || 5432,
-    database: process.env.DB_NAME     || 'madridvpo',
-    user:     process.env.DB_USER     || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    max: 10,                    // tamaño del pool de conexiones
-    idleTimeoutMillis: 30000,   // cierra conexiones inactivas tras 30s
-    connectionTimeoutMillis: 5000
-  },
+  // Si se define DATABASE_URL (Supabase, Railway, etc.) se usa directamente;
+  // si no, se construye a partir de las variables individuales (local).
+  DB: process.env.DATABASE_URL
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000
+      }
+    : {
+        host:     process.env.DB_HOST     || 'localhost',
+        port:     parseInt(process.env.DB_PORT) || 5432,
+        database: process.env.DB_NAME     || 'madridvpo',
+        user:     process.env.DB_USER     || 'postgres',
+        password: process.env.DB_PASSWORD || '',
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000
+      },
 
   // JWT
   JWT_SECRET:               process.env.JWT_SECRET || 'dev_secret_inseguro',
@@ -67,6 +77,13 @@ export default {
 
   // Admin
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || '',
+
+  // Google OAuth
+  GOOGLE: {
+    client_id:     process.env.GOOGLE_CLIENT_ID     || '',
+    client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+  },
+  BASE_URL: process.env.BASE_URL || 'http://localhost:3004',
 
   // Rutas
   UPLOADS_DIR: path.join(__dirname, '../../uploads'),
